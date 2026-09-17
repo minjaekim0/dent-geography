@@ -255,7 +255,7 @@ L=x[1].features;
 redraw();
 fetch('./daytime_population_2020.json').then(r=>r.ok?r.json():null).then(d=>{if(!d)return;
 let n=0;
-D.forEach(f=>{let r=d.districts[key(f.properties.name)];
+D.forEach(f=>{let r=d.districts[f.properties.code]||d.districts[key(f.properties.name)];
 if(r){f.properties.daytimePopulation=r.daytimePopulation;
 n++}});
 if(n>=200){let b=document.querySelector('[data-denom="daytime"]');
