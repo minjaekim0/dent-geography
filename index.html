@@ -141,10 +141,10 @@ margin-left:0}}
 </main><script>
 const S={metric:'dentalFacilities',exclude:false,denom:'resident'},M={dentalFacilities:['치과기관 수','곳','orthodonticFacilities'],dentalDentists:['치과의사 수','명','orthodonticDentists'],dentalSpecialists:['치과전문의 수','명','orthodonticSpecialists']},nf=n=>new Intl.NumberFormat('ko-KR').format(n||0),key=s=>(s||'').replace(/\s+/g,''),v=p=>Math.max(0,(p[S.metric]||0)-(S.exclude?(p[M[S.metric][2]]||0):0)),base=p=>S.denom==='daytime'?p.daytimePopulation:p.population,dname=()=>S.denom==='daytime'?'주간인구 (2020)':'주민등록 인구',rate=p=>base(p)?v(p)/base(p)*1e4:null,polys=g=>g.type==='Polygon'?[g.coordinates]:g.coordinates,coords=g=>polys(g).flatMap(x=>x.flat());
 
-const paint=x=>{let t=Math.max(0,Math.min(1,(x-1)/6))*2,i=Math.min(1,Math.floor(t)),a=[[232,244,248],[79,174,195],[7,61,98]][i],b=[[232,244,248],[79,174,195],[7,61,98]][i+1];
+const COLOR_MIN=0,COLOR_MAX=20,paint=x=>{let t=Math.max(0,Math.min(1,(x-COLOR_MIN)/(COLOR_MAX-COLOR_MIN)))*2,i=Math.min(1,Math.floor(t)),a=[[232,244,248],[79,174,195],[7,61,98]][i],b=[[232,244,248],[79,174,195],[7,61,98]][i+1];
 return'rgb('+a.map((n,j)=>Math.round(n+(b[j]-n)*(t-i))).join(',')+')'},mc=n=>({서울1호선:'#0052a4',서울2호선:'#00a84d',서울3호선:'#ef7c1c',서울4호선:'#00a5de',서울5호선:'#996cac',서울6호선:'#cd7c2f',서울7호선:'#747f00',서울8호선:'#e6186c',서울9호선:'#bb8336',부산1호선:'#f06a00',부산2호선:'#7ac143',부산3호선:'#bb8cce',부산4호선:'#1d9bb7',대구1호선:'#d93a46',대구2호선:'#00a54f',대구3호선:'#f5a900',대전1호선:'#007448',광주1호선:'#009088',인천1호선:'#7ca8d6',인천2호선:'#f06a2e',부산김해경전철:'#7c5db6',경강선:'#003da5',경의중앙선:'#77c4a3',경춘선:'#00a4e3',공항철도:'#0090d8',김포골드라인:'#a17800',서해선:'#8fc31f',수인분당선:'#f5c700',신분당선:'#d4003b',용인에버라인:'#6fb245',우이신설선:'#b7c452',의정부경전철:'#f58b39'}[n]||'#586b78');
 
-function draw(el,F,C=[]){el.replaceChildren();
+function draw(el,F,C=[],state){el.replaceChildren();
 let tip=document.createElement('div');
 tip.className='tooltip';
 el.append(tip);
@@ -185,7 +185,7 @@ e.setAttribute('stroke-width','.225');
 e.setAttribute('stroke-linecap','round');
 e.setAttribute('pointer-events','none');
 ct.append(e)})});
-let z=1,px=0,py=0,drag=false,id,last,apply=s=>{view.style.transition=s?'transform 120ms cubic-bezier(.2,.75,.3,1)':'none';
+let z=state?.z??1,px=state?.px??0,py=state?.py??0,drag=false,id,last,apply=s=>{if(state){state.z=z;state.px=px;state.py=py}view.style.transition=s?'transform 120ms cubic-bezier(.2,.75,.3,1)':'none';
 view.setAttribute('transform','translate('+(W/2+px)+' '+(H/2+py)+') scale('+z+') translate('+(-W/2)+' '+(-H/2)+')')},pt=e=>{let p=svg.createSVGPoint();
 p.x=e.clientX;
 p.y=e.clientY;
@@ -226,7 +226,7 @@ apply(true)};
 el.append(cc);
 let l=document.createElement('div');
 l.className='legend';
-l.innerHTML='<b>인구 1만 명당 '+M[S.metric][0]+'</b><div class="scale"></div><div class="lr"><span>낮음</span><span>높음</span></div>';
+l.innerHTML='<b>인구 1만 명당 '+M[S.metric][0]+'</b><div class="scale"></div><div class="lr"><span>'+COLOR_MIN+'</span><span>'+COLOR_MAX+' 이상</span></div>';
 el.append(l)}
 function panel(k,F,s){let p=F.reduce((x,f)=>x+(base(f.properties)||0),0),n=F.reduce((x,f)=>x+v(f.properties),0),u=M[S.metric];
 document.querySelector('#'+k+'-count').textContent=nf(F.length)+s;
@@ -236,9 +236,9 @@ document.querySelector('#'+k+'-rate-label').textContent='전국 평균 · '+dnam
 document.querySelector('#'+k+'-rate').textContent=p?(n/p*1e4).toFixed(2)+u[1]:'–';
 document.querySelector('#'+k+'-title').textContent=dname()+' 대비 '+u[0]+' 상위 10곳';
 document.querySelector('#'+k+'-ranking').innerHTML=F.filter(f=>rate(f.properties)!=null).sort((a,b)=>rate(b.properties)-rate(a.properties)).slice(0,10).map((f,i)=>'<li><span class="rank">'+(i+1)+'</span><span>'+f.properties.name+'</span><b>'+rate(f.properties).toFixed(2)+u[1]+'</b></li>').join('')}
-let D,L,T;
-function redraw(){if(D&&L){draw(document.querySelector('#map'),D);
-draw(document.querySelector('#local-map'),L,D);
+let D,L,T,V={district:{z:1,px:0,py:0},local:{z:1,px:0,py:0}};
+function redraw(){if(D&&L){draw(document.querySelector('#map'),D,[],V.district);
+draw(document.querySelector('#local-map'),L,D,V.local);
 panel('district',D,'곳');
 panel('local',L,'곳')}}function view(local){if(local&&S.denom==='daytime')S.denom='resident';
 let b=document.querySelector('[data-denom="daytime"]');
