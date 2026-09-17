@@ -1,9 +1,6 @@
 name: Collect HIRA dental specialties
 
 on:
-  schedule:
-    # 11:17 KST daily. Scheduled jobs can start a few minutes late on GitHub.
-    - cron: "17 2 * * *"
   workflow_dispatch:
 
 permissions:
