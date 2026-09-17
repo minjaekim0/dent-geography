@@ -21,12 +21,12 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-      - name: Collect 25 unprocessed providers at a low request rate
+      - name: Collect 100 unprocessed providers at a low request rate
         run: >-
           python scripts/collect_specialties_from_csv.py
           --targets data/specialty_targets_2026-06-30.csv
           --output data/specialties_2026-06-30.csv
-          --limit 25 --delay 2 --timeout 25
+          --limit 100 --delay 2 --timeout 25
       - name: Save newly collected results
         run: |
           if git diff --quiet -- data/specialties_2026-06-30.csv; then
