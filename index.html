@@ -255,7 +255,7 @@ Promise.all(['./district-boundaries.json?v=20260918','./eupmyeondong-boundaries.
 return r.json()}))).then(x=>{D=x[0].features;
 L=x[1].features;
 redraw();
-fetch('./daytime_population_2020.json').then(r=>r.ok?r.json():null).then(d=>{if(!d)return;
+fetch('./daytime_population_2020.json?v=20260918b').then(r=>r.ok?r.json():null).then(d=>{if(!d)return;
 let n=0;
 D.forEach(f=>{let r=d.districts[f.properties.code]||d.districts[key(f.properties.name)];
 if(r){f.properties.daytimePopulation=r.daytimePopulation;
