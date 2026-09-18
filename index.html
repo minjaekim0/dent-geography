@@ -251,7 +251,7 @@ document.querySelector('#local').hidden=!local;
 document.querySelector('#subtitle').textContent=local?'읍면동별 주민등록 인구 대비 치과 지표 분포':'시군구별 '+dname()+' 대비 치과 지표 분포';
 document.querySelectorAll('[data-view]').forEach(x=>x.setAttribute('aria-pressed',(x.dataset.view==='local')===local));
 redraw()}
-Promise.all(['./district-boundaries.json','./eupmyeondong-boundaries.json'].map(x=>fetch(x).then(r=>{if(!r.ok)throw Error(x);
+Promise.all(['./district-boundaries.json?v=20260918','./eupmyeondong-boundaries.json?v=20260918'].map(x=>fetch(x).then(r=>{if(!r.ok)throw Error(x);
 return r.json()}))).then(x=>{D=x[0].features;
 L=x[1].features;
 redraw();
