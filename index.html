@@ -64,13 +64,13 @@ background:#dceaf0}svg{display:block;
 width:100%;
 height:100%;
 touch-action:none;
-cursor:grab}svg.drag{cursor:grabbing}.area{stroke:#fff;
+cursor:grab}svg.drag{cursor:grabbing}.area{stroke:#8193a0;
 stroke-width:.64;
-stroke-opacity:.62;
+stroke-opacity:.85;
 vector-effect:non-scaling-stroke}.context{fill:none;
-stroke:#fff;
+stroke:#536d7e;
 stroke-width:1.36;
-stroke-opacity:.72;
+stroke-opacity:.9;
 vector-effect:non-scaling-stroke;
 pointer-events:none}#local-map .context{stroke-width:.68}.tooltip{display:none;
 position:absolute;
@@ -105,7 +105,7 @@ font-size:.75rem}.scale{width:150px;
 height:8px;
 margin:7px 0 4px;
 border-radius:99px;
-background:linear-gradient(90deg,rgb(232,244,248),rgb(79,174,195),rgb(7,61,98))}.lr{display:flex;
+background:linear-gradient(90deg,rgb(255,255,255),rgb(79,174,195),rgb(7,61,98))}.lr{display:flex;
 justify-content:space-between;
 color:var(--muted)}aside{min-height:520px;
 padding:18px 28px;
@@ -182,7 +182,7 @@ margin-left:0}}
 const S={metric:'dentalFacilities',eventKind:'net',denom:'resident',specialty:'__TOTAL__',specialtyScale:'count'},M={net:['개원 − 폐업 순증감','곳',null],specialty:['전체 과목 전문의 수 (복수자격 포함)','명',null],dentalFacilities:['치과기관 수','곳','orthodonticFacilities'],dentalDentists:['치과의사 수','명','orthodonticDentists'],openings:['신규개원','곳',null],closures:['폐업','곳',null]},nf=n=>new Intl.NumberFormat('ko-KR').format(n||0),key=s=>(s||'').replace(/\s+/g,''),isEvent=()=>['openings','closures','net'].includes(S.metric),isSpecialty=()=>S.metric==='specialty',isCount=()=>isEvent()||(isSpecialty()&&S.specialtyScale==='count'),v=p=>S.metric==='net'?(p.openings||0)-(p.closures||0):isSpecialty()?(p.specialties?.counts?.[S.specialty]||0):(p[S.metric]||0),base=p=>S.denom==='daytime'?p.daytimePopulation:p.population,dname=()=>S.denom==='daytime'?'주간인구 (2020)':'주민등록 인구',rate=p=>isCount()?v(p):(base(p)?v(p)/base(p)*1e4:null),polys=g=>g.type==='Polygon'?[g.coordinates]:g.coordinates,coords=g=>polys(g).flatMap(x=>x.flat());
 
 const signed=n=>n>0?'+'+nf(n):n<0?'−'+nf(-n):'0';
-const COLOR_MIN=0,scaleMax=F=>{let values=F.map(f=>S.metric==='net'?Math.abs(rate(f.properties)):rate(f.properties)).filter(x=>x!=null&&x>0).sort((a,b)=>a-b);if(!values.length)return 1;let value=values[Math.floor((values.length-1)*(isEvent()?.95:.9))];return value>=10?Math.ceil(value):Math.ceil(value*2)/2},paint=(x,max)=>{if(S.metric==='net'){const t=Math.min(1,Math.abs(x)/max),a=[245,247,248],b=x<0?[181,43,43]:[17,112,54];return 'rgb('+a.map((v,i)=>Math.round(v+(b[i]-v)*t)).join(',')+')'}let t=Math.max(0,Math.min(1,(x-COLOR_MIN)/(max-COLOR_MIN)))*2,i=Math.min(1,Math.floor(t)),stops=isEvent()?(S.metric==='openings'?[[232,248,237],[89,190,120],[17,112,54]]:[[255,235,235],[238,127,127],[181,43,43]]):[[232,244,248],[79,174,195],[7,61,98]],a=stops[i],b=stops[i+1];
+const COLOR_MIN=0,scaleMax=F=>{let values=F.map(f=>S.metric==='net'?Math.abs(rate(f.properties)):rate(f.properties)).filter(x=>x!=null&&x>0).sort((a,b)=>a-b);if(!values.length)return 1;let value=values[Math.floor((values.length-1)*(isEvent()?.95:.9))];return value>=10?Math.ceil(value):Math.ceil(value*2)/2},paint=(x,max)=>{if(x===0)return '#ffffff';if(S.metric==='net'){const t=Math.min(1,Math.abs(x)/max),a=[255,255,255],b=x<0?[181,43,43]:[17,112,54];return 'rgb('+a.map((v,i)=>Math.round(v+(b[i]-v)*t)).join(',')+')'}let t=Math.max(0,Math.min(1,(x-COLOR_MIN)/(max-COLOR_MIN)))*2,i=Math.min(1,Math.floor(t)),stops=isEvent()?(S.metric==='openings'?[[255,255,255],[89,190,120],[17,112,54]]:[[255,255,255],[238,127,127],[181,43,43]]):[[255,255,255],[79,174,195],[7,61,98]],a=stops[i],b=stops[i+1];
 return'rgb('+a.map((n,j)=>Math.round(n+(b[j]-n)*(t-i))).join(',')+')'},mc=n=>({서울1호선:'#0052a4',서울2호선:'#00a84d',서울3호선:'#ef7c1c',서울4호선:'#00a5de',서울5호선:'#996cac',서울6호선:'#cd7c2f',서울7호선:'#747f00',서울8호선:'#e6186c',서울9호선:'#bb8336',부산1호선:'#f06a00',부산2호선:'#7ac143',부산3호선:'#bb8cce',부산4호선:'#1d9bb7',대구1호선:'#d93a46',대구2호선:'#00a54f',대구3호선:'#f5a900',대전1호선:'#007448',광주1호선:'#009088',인천1호선:'#7ca8d6',인천2호선:'#f06a2e',부산김해경전철:'#7c5db6',경강선:'#003da5',경의중앙선:'#77c4a3',경춘선:'#00a4e3',공항철도:'#0090d8',김포골드라인:'#a17800',서해선:'#8fc31f',수인분당선:'#f5c700',신분당선:'#d4003b',용인에버라인:'#6fb245',우이신설선:'#b7c452',의정부경전철:'#f58b39'}[n]||'#586b78');
 
 function draw(el,F,C=[],state){el.replaceChildren();
@@ -268,7 +268,7 @@ el.append(cc);
 let l=document.createElement('div');
 l.className='legend';
 l.innerHTML='<b>'+(isEvent()?periodLabel()+' '+M[S.metric][0]+' (확인 기록)':isCount()?M[S.metric][0]+' (명)':'인구 1만 명당 '+M[S.metric][0])+'</b><div class="scale"></div><div class="lr"><span>'+COLOR_MIN+'</span><span>'+max+' 이상</span></div>';
-if(S.metric==='net'){l.innerHTML='<b>'+periodLabel()+' 순증감 (개원 − 폐업)</b><div class="scale" style="background:linear-gradient(90deg,#b52b2b,#f5f7f8,#117036)"></div><div class="lr"><span>−'+max+' 이하</span><span>0</span><span>+'+max+' 이상</span></div>'}else if(isEvent())l.querySelector('.scale').style.background=S.metric==='openings'?'linear-gradient(90deg,rgb(232,248,237),rgb(89,190,120),rgb(17,112,54))':'linear-gradient(90deg,rgb(255,235,235),rgb(238,127,127),rgb(181,43,43))';
+if(S.metric==='net'){l.innerHTML='<b>'+periodLabel()+' 순증감 (개원 − 폐업)</b><div class="scale" style="background:linear-gradient(90deg,#b52b2b,#ffffff,#117036)"></div><div class="lr"><span>−'+max+' 이하</span><span>0</span><span>+'+max+' 이상</span></div>'}else if(isEvent())l.querySelector('.scale').style.background=S.metric==='openings'?'linear-gradient(90deg,rgb(255,255,255),rgb(89,190,120),rgb(17,112,54))':'linear-gradient(90deg,rgb(255,255,255),rgb(238,127,127),rgb(181,43,43))';
 el.append(l);apply()}
 function panel(k,F,s){let p=F.reduce((x,f)=>x+(base(f.properties)||0),0),n=F.reduce((x,f)=>x+v(f.properties),0),u=M[S.metric];
 if(S.metric==='net'){
