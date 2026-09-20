@@ -310,9 +310,21 @@ apply(true)};
 el.append(cc);
 let l=document.createElement('div');
 l.className='legend';
+paintLegend(l,max);
+el.append(l);highlight();apply()}
+function paintLegend(l,max){
 l.innerHTML='<b>'+(isEvent()?periodLabel()+' '+M[S.metric][0]+' (확인 기록)':isCount()?M[S.metric][0]+' (명)':'인구 1만 명당 '+M[S.metric][0])+'</b><div class="scale"></div><div class="lr"><span>'+COLOR_MIN+'</span><span>'+max+' 이상</span></div>';
 if(S.metric==='net'){l.innerHTML='<b>'+periodLabel()+' 순증감 (개원 − 폐업)</b><div class="scale" style="background:linear-gradient(90deg,#b52b2b,#ffffff,#117036)"></div><div class="lr"><span>−'+max+' 이하</span><span>0</span><span>+'+max+' 이상</span></div>'}else if(isEvent())l.querySelector('.scale').style.background=S.metric==='openings'?'linear-gradient(90deg,rgb(255,255,255),rgb(89,190,120),rgb(17,112,54))':'linear-gradient(90deg,rgb(255,255,255),rgb(238,127,127),rgb(181,43,43))';
-el.append(l);highlight();apply()}
+}
+function refreshMap(el,F,C,state){
+const areas=el.querySelectorAll('.area');
+if(areas.length!==F.length){draw(el,F,C,state);return}
+const max=scaleMax(F);
+areas.forEach((area,i)=>{const value=rate(F[i].properties);area.setAttribute('fill',value==null?'#c8d8de':paint(value,max))});
+el.querySelector('.tooltip')?.classList.remove('on');
+paintLegend(el.querySelector('.legend'),max);
+regionInfo(el,F,state);
+}
 function panel(k,F,s){let p=F.reduce((x,f)=>x+(base(f.properties)||0),0),n=F.reduce((x,f)=>x+v(f.properties),0),u=M[S.metric];
 if(S.metric==='net'){
 const active=F.filter(f=>(f.properties.openings||0)+(f.properties.closures||0)>0),ranked=[...active].sort((a,b)=>Math.abs(v(b.properties))-Math.abs(v(a.properties)));
@@ -374,8 +386,8 @@ if(isEvent())document.querySelector('#subtitle').textContent=(local?'읍면동':
 if(Y&&E){let c=E.coverage,t=E.totals;
 document.querySelector('#event-note').textContent=periodLabel()+' · 신규개원 전체 '+nf(t.openings)+'건 / 읍면동 연결 '+nf(c.localOpenings)+'건 / 미배정 '+nf(t.openings-c.localOpenings)+'건. 폐업 전체 '+nf(t.closures)+'건 / 읍면동 연결 '+nf(c.localClosures)+'건 / 미배정 '+nf(t.closures-c.localClosures)+'건. 시군구 연결: 신규개원 '+nf(c.districtOpenings)+'건, 폐업 '+nf(c.districtClosures)+'건. '+Y.notes.locations;
 document.querySelector('#recovery-summary').textContent=Y.source+' · 수집 '+Y.collectedAt+'. '+Y.notes.openings+' '+Y.notes.closures+' '+Y.notes.range}}
-function redraw(){eventLabels();if(isEvent()&&!E){for(let k of ['district','local']){document.querySelector(k==='district'?'#map':'#local-map').textContent=eventError?'연도별 데이터를 불러오지 못했습니다. 새로고침해 주세요.':'연도별 데이터를 불러오는 중입니다.';for(let suffix of ['count','total','rate'])document.querySelector('#'+k+'-'+suffix).textContent='–';document.querySelector('#'+k+'-ranking').replaceChildren()}return}if(D){draw(document.querySelector('#map'),D,[],V.district);
-panel('district',D,'곳')}if(L){draw(document.querySelector('#local-map'),L,D||[],V.local);
+function redraw(live=false){eventLabels();if(isEvent()&&!E){for(let k of ['district','local']){document.querySelector(k==='district'?'#map':'#local-map').textContent=eventError?'연도별 데이터를 불러오지 못했습니다. 새로고침해 주세요.':'연도별 데이터를 불러오는 중입니다.';for(let suffix of ['count','total','rate'])document.querySelector('#'+k+'-'+suffix).textContent='–';document.querySelector('#'+k+'-ranking').replaceChildren()}return}if(D){(live?refreshMap:draw)(document.querySelector('#map'),D,[],V.district);
+panel('district',D,'곳')}if(L){(live?refreshMap:draw)(document.querySelector('#local-map'),L,D||[],V.local);
 panel('local',L,'곳')}}function loadLocal(){if(localLoad)return localLoad;
 document.querySelector('#local-map').textContent='읍면동 지도 데이터를 불러오는 중입니다.';
 localLoad=fetch('./eupmyeondong-boundaries.json').then(r=>{if(!r.ok)throw Error('읍면동 경계 데이터 요청 실패');
@@ -423,6 +435,7 @@ out.regions=Object.values(regions);return out}
 function periodLabel(){return year===yearEnd?year+'년':year+'–'+yearEnd+'년 누적'}
 function renderTrend(){
 if(!Y||!isEvent())return;
+if(chartDrag){previewChart(year,yearEnd);return}
 const entries=Object.entries(Y.years).sort((a,b)=>Number(a[0])-Number(b[0])),both=S.metric==='net';
 const max=Math.max(1,...entries.flatMap(([,d])=>both?[d.totals.openings,d.totals.closures]:[d.totals[S.metric]||0]));
 document.querySelector('#event-trend').innerHTML=entries.map(([y,d])=>{
@@ -432,7 +445,18 @@ return '<button class="trend-year" aria-pressed="'+selected+'" data-year="'+y+'"
 document.querySelector('#trend-title').textContent=both?'연도별 개원(위 +) · 폐업(아래 −) · 지도는 순증감':'전국 연도별 '+M[S.metric][0]+' · 막대를 누르면 해당 연도 선택';
 chartHint();
 }
-let rangeAnchor=null,chartDrag=null,suppressChartClick=false;
+let rangeAnchor=null,chartDrag=null,suppressChartClick=false,chartFrame=null,pendingChartPeriod=null;
+function cancelChartUpdate(){if(chartFrame!==null)cancelAnimationFrame(chartFrame);chartFrame=null;pendingChartPeriod=null}
+function queueChartPeriod(first,last){
+pendingChartPeriod=[first,last];
+if(chartFrame!==null)return;
+chartFrame=requestAnimationFrame(()=>{
+chartFrame=null;const period=pendingChartPeriod;pendingChartPeriod=null;
+if(!chartDrag||!period)return;
+const years=Object.keys(Y.years).map(Number),[a,b]=normalizePeriod(...period,Math.min(...years),Math.max(...years),windowYears());
+if(a!==year||b!==yearEnd)selectPeriod(a,b,true);
+});
+}
 function chartHint(){
 const mode=document.querySelector('#event-mode').value;
 document.querySelector('#chart-help').textContent=mode==='window'?'막대를 클릭하거나 드래그하면 고정 기간이 이동합니다.':mode==='single'?'조회할 연도를 클릭하거나 드래그하세요.':rangeAnchor===null?'시작 연도와 종료 연도를 차례로 클릭하거나, 원하는 구간을 드래그하세요.':rangeAnchor+'년 선택됨 · 종료 연도를 클릭하세요. (Esc: 취소)';
@@ -453,9 +477,9 @@ const chart=document.querySelector('#event-trend');
 const atX=x=>{const buttons=[...chart.querySelectorAll('.trend-year')];return Number(buttons.reduce((best,b)=>Math.abs(b.getBoundingClientRect().x+b.getBoundingClientRect().width/2-x)<Math.abs(best.getBoundingClientRect().x+best.getBoundingClientRect().width/2-x)?b:best).dataset.year)};
 chart.onclick=e=>{if(suppressChartClick){suppressChartClick=false;return}const b=e.target.closest('[data-year]');if(b)chooseChartYear(+b.dataset.year)};
 chart.onpointerdown=e=>{if(e.button!==0)return;const b=e.target.closest('[data-year]');if(!b)return;suppressChartClick=false;chartDrag={id:e.pointerId,start:+b.dataset.year,last:+b.dataset.year,x:e.clientX,moved:false};chart.setPointerCapture(e.pointerId)};
-chart.onpointermove=e=>{if(!chartDrag||chartDrag.id!==e.pointerId)return;const target=atX(e.clientX);chartDrag.last=target;if(Math.abs(e.clientX-chartDrag.x)>5)chartDrag.moved=true;if(chartDrag.moved){const range=document.querySelector('#event-mode').value==='range';previewChart(range?Math.min(chartDrag.start,target):target,range?Math.max(chartDrag.start,target):target)}};
-chart.onpointerup=e=>{if(!chartDrag||chartDrag.id!==e.pointerId)return;const d=chartDrag;chartDrag=null;chart.releasePointerCapture(e.pointerId);if(d.moved){suppressChartClick=true;rangeAnchor=null;const range=document.querySelector('#event-mode').value==='range';selectPeriod(range?Math.min(d.start,d.last):d.last,range?Math.max(d.start,d.last):d.last)}else{chooseChartYear(d.start);suppressChartClick=true}};
-chart.onpointercancel=()=>{chartDrag=null;rangeAnchor=null;renderTrend()};
+chart.onpointermove=e=>{if(!chartDrag||chartDrag.id!==e.pointerId)return;const target=atX(e.clientX);chartDrag.last=target;if(Math.abs(e.clientX-chartDrag.x)>5)chartDrag.moved=true;if(chartDrag.moved){const range=document.querySelector('#event-mode').value==='range';const first=range?Math.min(chartDrag.start,target):target,last=range?Math.max(chartDrag.start,target):target;previewChart(first,last);queueChartPeriod(first,last)}};
+chart.onpointerup=e=>{if(!chartDrag||chartDrag.id!==e.pointerId)return;const d=chartDrag;cancelChartUpdate();chartDrag=null;chart.releasePointerCapture(e.pointerId);if(d.moved){suppressChartClick=true;rangeAnchor=null;const range=document.querySelector('#event-mode').value==='range';selectPeriod(range?Math.min(d.start,d.last):d.last,range?Math.max(d.start,d.last):d.last,true)}else{chooseChartYear(d.start);suppressChartClick=true}};
+chart.onpointercancel=()=>{cancelChartUpdate();chartDrag=null;rangeAnchor=null;renderTrend();previewChart(year,yearEnd)};
 chart.onkeydown=e=>{if(e.key==='Escape'){rangeAnchor=null;renderTrend();document.querySelector('#event-selection').textContent=periodLabel()}};
 }
 
@@ -465,14 +489,14 @@ function normalizePeriod(first,last,min,max,size=0){
 first=Math.round(Number(first));last=Math.round(Number(last));
 if(size){const start=Math.max(min,Math.min(max-size+1,first));return [start,start+size-1]}
 const start=Math.max(min,Math.min(max,first));return [start,Math.max(start,Math.min(max,last))]}
-function selectPeriod(first,last){
+function selectPeriod(first,last,live=false){
 if(!Y)return;const years=Object.keys(Y.years).map(Number),min=Math.min(...years),max=Math.max(...years),size=windowYears();
 [year,yearEnd]=normalizePeriod(first,last,min,max,size);
 document.querySelector('#event-selection').textContent=periodLabel()+(size?' · '+size+'년 창':'');
 document.querySelector('#window-hint').hidden=!size;
 document.querySelector('#window-options').hidden=!size;
 document.querySelectorAll('[data-window]').forEach(b=>b.setAttribute('aria-pressed',Number(b.dataset.window)===size));
-E=aggregateYears(year,yearEnd);O=E;eventPanel(E);applyEvents();applyLocalOpenings();redraw();
+E=aggregateYears(year,yearEnd);O=E;applyEvents();applyLocalOpenings();redraw(live);
 document.querySelector('#event-prev').disabled=year===min;document.querySelector('#event-next').disabled=yearEnd===max;
 }
 function setupPeriods(){
