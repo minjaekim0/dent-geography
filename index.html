@@ -1,4 +1,5 @@
 <!doctype html><html lang="ko"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex, nofollow, noarchive"><title>치과 입지 지도</title><style>
+.region-info{padding-bottom:20px;margin-bottom:8px;border-bottom:2px solid var(--line)}.region-info h2{margin:0;font-size:1.05rem}.region-info p{color:var(--muted);font-size:.8rem;line-height:1.6}.region-heading{display:flex;align-items:start;justify-content:space-between;gap:8px}.region-heading button{border:1px solid var(--line);border-radius:6px;background:white;font-size:20px;cursor:pointer}.region-period{margin:8px 0}.region-primary{padding:12px;background:#e6f1f6;border-radius:8px}.region-primary span{font-size:.8rem;display:block}.region-primary strong{display:block;font-size:1.5rem;margin-top:5px}.region-info dl{margin:10px 0}.region-info dl>div{display:flex;justify-content:space-between;gap:12px;font-size:.8rem;padding:7px 0;border-bottom:1px solid #edf1f3}.region-info dt{color:var(--muted)}.region-info dd{margin:0;text-align:right;font-weight:700}.region-specialties summary{cursor:pointer;font-size:.85rem}.selection-outline{fill:none;stroke:#ff9c24;stroke-width:2.5;vector-effect:non-scaling-stroke;pointer-events:none}.area{cursor:pointer}.area:focus-visible{outline:none;stroke:#ff9c24;stroke-width:2}.zoom-level{display:flex;align-items:center;padding:0 9px;background:white;font-size:12px;color:var(--muted)}
 :root{--ink:#112334;
 --muted:#647786;
 --line:#d9e5ea;
@@ -185,7 +186,38 @@ const signed=n=>n>0?'+'+nf(n):n<0?'−'+nf(-n):'0';
 const COLOR_MIN=0,scaleMax=F=>{let values=F.map(f=>S.metric==='net'?Math.abs(rate(f.properties)):rate(f.properties)).filter(x=>x!=null&&x>0).sort((a,b)=>a-b);if(!values.length)return 1;let value=values[Math.floor((values.length-1)*(isEvent()?.95:.9))];return value>=10?Math.ceil(value):Math.ceil(value*2)/2},paint=(x,max)=>{if(x===0)return '#ffffff';if(S.metric==='net'){const t=Math.min(1,Math.abs(x)/max),a=[255,255,255],b=x<0?[181,43,43]:[17,112,54];return 'rgb('+a.map((v,i)=>Math.round(v+(b[i]-v)*t)).join(',')+')'}let t=Math.max(0,Math.min(1,(x-COLOR_MIN)/(max-COLOR_MIN)))*2,i=Math.min(1,Math.floor(t)),stops=isEvent()?(S.metric==='openings'?[[255,255,255],[89,190,120],[17,112,54]]:[[255,255,255],[238,127,127],[181,43,43]]):[[255,255,255],[79,174,195],[7,61,98]],a=stops[i],b=stops[i+1];
 return'rgb('+a.map((n,j)=>Math.round(n+(b[j]-n)*(t-i))).join(',')+')'},mc=n=>({서울1호선:'#0052a4',서울2호선:'#00a84d',서울3호선:'#ef7c1c',서울4호선:'#00a5de',서울5호선:'#996cac',서울6호선:'#cd7c2f',서울7호선:'#747f00',서울8호선:'#e6186c',서울9호선:'#bb8336',부산1호선:'#f06a00',부산2호선:'#7ac143',부산3호선:'#bb8cce',부산4호선:'#1d9bb7',대구1호선:'#d93a46',대구2호선:'#00a54f',대구3호선:'#f5a900',대전1호선:'#007448',광주1호선:'#009088',인천1호선:'#7ca8d6',인천2호선:'#f06a2e',부산김해경전철:'#7c5db6',경강선:'#003da5',경의중앙선:'#77c4a3',경춘선:'#00a4e3',공항철도:'#0090d8',김포골드라인:'#a17800',서해선:'#8fc31f',수인분당선:'#f5c700',신분당선:'#d4003b',용인에버라인:'#6fb245',우이신설선:'#b7c452',의정부경전철:'#f58b39'}[n]||'#586b78');
 
+
+const escapeHTML=value=>String(value??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+function regionInfo(el,F,state){
+const level=el.id==='local-map'?'local':'district',aside=document.querySelector('#'+level+' aside');
+let card=aside.querySelector('.region-info');
+if(!card){card=document.createElement('section');card.className='region-info';card.setAttribute('aria-label','선택 지역 정보');card.setAttribute('aria-live','polite');aside.prepend(card)}
+const f=F.find(f=>String(f.properties.code)===state.selected);
+if(!f){card.innerHTML='<h2>지역 정보</h2><p>지도에서 행정구역을 클릭하면<br>해당 지역의 현황을 볼 수 있습니다.</p>';return}
+const p=f.properties,fullName=level==='district'?((Object.entries(SIDO_PREFIX).find(([,code])=>String(p.code).startsWith(code))||[])[0]||'')+' '+p.name:p.name;
+const row=(label,value)=>'<div><dt>'+escapeHTML(label)+'</dt><dd>'+escapeHTML(value)+'</dd></div>';
+const number=(value,unit)=>value==null?'자료 없음':nf(value)+unit;
+const per=(value,pop)=>value==null||!pop?'산출 불가':(value/pop*1e4).toFixed(2)+M[S.metric][1];
+let rows='';
+if(isEvent()){
+rows+=row('신규개원','+'+nf(p.openings)+'곳')+row('폐업','−'+nf(p.closures)+'곳')+row('순증감',signed((p.openings||0)-(p.closures||0))+'곳');
+}else{
+rows+=row('치과기관',number(p.dentalFacilities,'곳'))+row('치과의사',number(p.dentalDentists,'명'));
+if(SP&&p.specialties)rows+=row('전문자격 합계 (중복 포함)',nf(p.specialties.counts.__TOTAL__)+'명')+row('통합치의학과 제외',nf(p.specialties.counts.__WITHOUT_GENERAL__)+'명');
+rows+=row('주민등록 인구 1만 명당',per(v(p),p.population));
+if(level==='district')rows+=row('주간인구 1만 명당',per(v(p),p.daytimePopulation));
+}
+rows+=row('주민등록 인구',number(p.population,'명'));
+if(level==='district')rows+=row('주간인구 (2020)',number(p.daytimePopulation,'명'));
+const selectedValue=rate(p),headline=isEvent()?(S.metric==='net'?signed(v(p)):nf(v(p)))+'곳':isCount()?nf(v(p))+'명':selectedValue==null?'산출 불가':selectedValue.toFixed(2)+M[S.metric][1];
+card.innerHTML='<div class="region-heading"><h2>'+escapeHTML(fullName.trim())+'</h2><button type="button" aria-label="지역 선택 해제">×</button></div><p class="region-period">'+escapeHTML(isEvent()?periodLabel()+' · 지도 연결 기록':'2026년 6월 기관 목록 기준')+'</p><div class="region-primary"><span>'+escapeHTML((isCount()?'':'인구 1만 명당 · ')+M[S.metric][0])+'</span><strong>'+headline+'</strong></div><dl>'+rows+'</dl>'+
+(isSpecialty()&&SP?'<details class="region-specialties"><summary>과목별 전문의 수</summary><dl>'+SP.specialties.map(s=>row(s,nf(p.specialties?.counts?.[s]||0)+'명')).join('')+'</dl></details>':'')+
+'<p class="region-footnote">'+(isEvent()?'선택 기간에 이 지역으로 연결된 기록입니다. 미배정 기록은 포함하지 않습니다.':'개원가 기준입니다. 전문자격 합계는 복수자격을 중복 포함하며 고유 인원수가 아닙니다.')+'</p>';
+card.querySelector('button').onclick=()=>{state.selected=null;el.querySelector('.selection-outline')?.remove();el.querySelectorAll('.area[aria-pressed="true"]').forEach(p=>p.setAttribute('aria-pressed','false'));regionInfo(el,F,state)};
+}
+
 function draw(el,F,C=[],state){el.replaceChildren();
+regionInfo(el,F,state);
 let tip=document.createElement('div');
 tip.className='tooltip';
 el.append(tip);
@@ -193,7 +225,10 @@ let svg=document.createElementNS('http://www.w3.org/2000/svg','svg'),W=1200,H=10
 svg.setAttribute('viewBox','0 0 '+W+' '+H);
 el.append(svg);
 let view=document.createElementNS(svg.namespaceURI,'g'),ar=document.createElementNS(svg.namespaceURI,'g'),ct=document.createElementNS(svg.namespaceURI,'g');
-view.append(ar,ct);
+let selection=document.createElementNS(svg.namespaceURI,'g');
+view.append(ar,ct,selection);
+function selectArea(code){state.selected=code;highlight();regionInfo(el,F,state)}
+function highlight(){selection.replaceChildren();ar.querySelectorAll('.area').forEach(e=>{const active=e.dataset.code===state.selected;e.setAttribute('aria-pressed',active);if(active){const outline=document.createElementNS(svg.namespaceURI,'path');outline.setAttribute('d',e.getAttribute('d'));outline.setAttribute('class','selection-outline');selection.append(outline)}})}
 svg.append(view);
 let q=F.flatMap(f=>polys(f.geometry).flat(2)),x0=Infinity,x1=-Infinity,y0=Infinity,y1=-Infinity;
 q.forEach(([x,y])=>{x0=Math.min(x0,x);
@@ -204,6 +239,8 @@ let c=Math.cos(36.5*Math.PI/180),sc=Math.min((W-80)/((x1-x0)*c),(H-80)/(y1-y0)),
 F.forEach(f=>{let p=f.properties,e=document.createElementNS(svg.namespaceURI,'path');
 e.setAttribute('d',path(f.geometry));
 e.setAttribute('class','area');
+e.dataset.code=String(p.code);e.setAttribute('role','button');e.setAttribute('tabindex','0');e.setAttribute('aria-label',p.name+' 지역 정보');
+e.onkeydown=q=>{if(q.key==='Enter'||q.key===' '){q.preventDefault();selectArea(String(p.code))}};
 e.setAttribute('fill',rate(p)==null?'#c8d8de':paint(rate(p),max));
 e.onmousemove=q=>{if(drag)return;
 let r=el.getBoundingClientRect(),z=rate(p);
@@ -226,11 +263,11 @@ e.setAttribute('stroke-width','.225');
 e.setAttribute('stroke-linecap','round');
 e.setAttribute('pointer-events','none');
 ct.append(e)})});
-let z=state?.z??1,px=state?.px??0,py=state?.py??0,drag=false,id,last,apply=s=>{if(state){state.z=z;state.px=px;state.py=py}view.style.transition=s?'transform 120ms cubic-bezier(.2,.75,.3,1)':'none';
+let z=state?.z??1,px=state?.px??0,py=state?.py??0,drag=false,id,last,startPoint,pressedCode,moved=false,zoomLabel,apply=s=>{if(state){state.z=z;state.px=px;state.py=py}if(zoomLabel)zoomLabel.textContent=z.toFixed(1)+'×';view.style.transition=s?'transform 120ms cubic-bezier(.2,.75,.3,1)':'none';
 view.setAttribute('transform','translate('+(W/2+px)+' '+(H/2+py)+') scale('+z+') translate('+(-W/2)+' '+(-H/2)+')')},pt=e=>{let p=svg.createSVGPoint();
 p.x=e.clientX;
 p.y=e.clientY;
-return p.matrixTransform(svg.getScreenCTM().inverse())},zoom=(n,f)=>{n=Math.max(1,Math.min(24,n));
+return p.matrixTransform(svg.getScreenCTM().inverse())},zoom=(n,f)=>{n=Math.max(1,Math.min(120,n));
 let x=f.x-W/2,y=f.y-H/2;
 px=x-n*(x-px)/z;
 py=y-n*(y-py)/z;
@@ -238,19 +275,21 @@ z=n;
 apply(true)};
 svg.onpointerdown=e=>{if(e.button)return;
 id=e.pointerId;
-last=pt(e);
+last=pt(e);startPoint={x:e.clientX,y:e.clientY};pressedCode=e.target.closest('.area')?.dataset.code;moved=false;
 drag=true;
 svg.setPointerCapture(id);
 svg.classList.add('drag');
 tip.classList.remove('on')};
 svg.onpointermove=e=>{if(e.pointerId!==id)return;
 let n=pt(e);
+if(Math.hypot(e.clientX-startPoint.x,e.clientY-startPoint.y)>5)moved=true;
 px+=n.x-last.x;
 py+=n.y-last.y;
 last=n;
 apply()};
-let end=e=>{if(e.pointerId===id){id=null;
+let end=e=>{if(e.pointerId===id){if(e.type==='pointerup'&&!moved&&pressedCode)selectArea(pressedCode);id=null;
 drag=false;
+if(svg.hasPointerCapture(e.pointerId))svg.releasePointerCapture(e.pointerId);
 svg.classList.remove('drag')}};
 svg.onpointerup=end;
 svg.onpointercancel=end;
@@ -258,7 +297,8 @@ svg.addEventListener('wheel',e=>{e.preventDefault();
 zoom(z*Math.exp(-e.deltaY*.0015),pt(e))},{passive:false});
 let cc=document.createElement('div');
 cc.className='zoom';
-cc.innerHTML='<button>+</button><button>−</button><button>↺</button>';
+cc.innerHTML='<button aria-label="지도 확대">+</button><button aria-label="지도 축소">−</button><button aria-label="지도 초기화">↺</button><span class="zoom-level" aria-label="확대 배율"></span>';
+zoomLabel=cc.querySelector('.zoom-level');
 cc.children[0].onclick=()=>zoom(z*1.25,{x:W/2,y:H/2});
 cc.children[1].onclick=()=>zoom(z/1.25,{x:W/2,y:H/2});
 cc.children[2].onclick=()=>{z=1;
@@ -269,7 +309,7 @@ let l=document.createElement('div');
 l.className='legend';
 l.innerHTML='<b>'+(isEvent()?periodLabel()+' '+M[S.metric][0]+' (확인 기록)':isCount()?M[S.metric][0]+' (명)':'인구 1만 명당 '+M[S.metric][0])+'</b><div class="scale"></div><div class="lr"><span>'+COLOR_MIN+'</span><span>'+max+' 이상</span></div>';
 if(S.metric==='net'){l.innerHTML='<b>'+periodLabel()+' 순증감 (개원 − 폐업)</b><div class="scale" style="background:linear-gradient(90deg,#b52b2b,#ffffff,#117036)"></div><div class="lr"><span>−'+max+' 이하</span><span>0</span><span>+'+max+' 이상</span></div>'}else if(isEvent())l.querySelector('.scale').style.background=S.metric==='openings'?'linear-gradient(90deg,rgb(255,255,255),rgb(89,190,120),rgb(17,112,54))':'linear-gradient(90deg,rgb(255,255,255),rgb(238,127,127),rgb(181,43,43))';
-el.append(l);apply()}
+el.append(l);highlight();apply()}
 function panel(k,F,s){let p=F.reduce((x,f)=>x+(base(f.properties)||0),0),n=F.reduce((x,f)=>x+v(f.properties),0),u=M[S.metric];
 if(S.metric==='net'){
 const active=F.filter(f=>(f.properties.openings||0)+(f.properties.closures||0)>0),ranked=[...active].sort((a,b)=>Math.abs(v(b.properties))-Math.abs(v(a.properties)));
