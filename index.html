@@ -159,15 +159,15 @@ flex-direction:column}.layout{grid-template-columns:1fr}.map{height:65vh;
 min-height:430px}aside{min-height:auto}.event-lists{grid-template-columns:1fr;
 gap:16px}.note{width:100%;
 margin-left:0}}
-.period-controls select,.period-controls button{font:inherit;border:1px solid var(--line);border-radius:8px;background:white;padding:7px 10px;cursor:pointer}.year-sliders{display:flex;gap:24px;width:100%;flex-wrap:wrap}.year-sliders label{flex:1;min-width:220px;font-size:13px}.year-sliders output{float:right;font-weight:700}.year-sliders input{display:block;width:100%;accent-color:var(--blue);cursor:ew-resize}#event-trend{display:flex;align-items:end;gap:3px;width:100%;overflow-x:auto;padding-top:8px}.period-controls .trend-year{display:flex;flex:1;min-width:28px;flex-direction:column;justify-content:end;align-items:center;padding:3px 1px;border:0;border-bottom:3px solid transparent;background:transparent;color:var(--ink);opacity:.45}.period-controls .trend-year[aria-pressed=true]{opacity:1;border-bottom-color:var(--blue);background:#e6f1f6}.trend-bar{width:80%;border-radius:3px 3px 0 0;display:block}.trend-year small{font-size:9px;margin-top:4px}</style><body><main>
+.period-controls select,.period-controls button{font:inherit;border:1px solid var(--line);border-radius:8px;background:white;padding:7px 10px;cursor:pointer}.year-sliders{display:flex;gap:24px;width:100%;flex-wrap:wrap}.year-sliders label{flex:1;min-width:220px;font-size:13px}.year-sliders output{float:right;font-weight:700}.year-sliders input[type=number]{width:90px;float:right;padding:5px 8px;border:1px solid var(--line);border-radius:6px;font:inherit;font-weight:700}.year-sliders input[type=range]{display:block;width:100%;accent-color:var(--blue);cursor:ew-resize}#event-trend{display:flex;align-items:end;gap:3px;width:100%;overflow-x:auto;padding-top:8px}.period-controls .trend-year{display:flex;flex:1;min-width:28px;flex-direction:column;justify-content:end;align-items:center;padding:3px 1px;border:0;border-bottom:3px solid transparent;background:transparent;color:var(--ink);opacity:.45}.period-controls .trend-year[aria-pressed=true]{opacity:1;border-bottom-color:var(--blue);background:#e6f1f6}.trend-bar{width:80%;border-radius:3px 3px 0 0;display:block}.trend-year small{font-size:9px;margin-top:4px}</style><body><main>
 <header><div><h1>치과 입지 지도</h1><p id="subtitle">시군구별 주민등록 인구 대비 치과 지표 분포</p></div><div class="actions"><div class="switch"><button data-view="district" aria-pressed="true">시군구</button><button data-view="local" aria-pressed="false">읍면동</button></div><div class="asof">2026년 6월 기준</div></div></header>
 <section class="bar"><span class="label">지도 지표</span><div class="switch"><button data-metric="dentalFacilities" aria-pressed="true">치과기관 수</button><button data-metric="dentalDentists" aria-pressed="false">치과의사 수</button><button data-metric="specialty" aria-pressed="false" disabled>치과전문의 수</button><button data-metric="openings" aria-pressed="false">신규개원</button><button data-metric="closures" aria-pressed="false">폐업</button></div><span class="label">비교 기준</span><div class="switch"><button data-denom="resident" aria-pressed="true">주민등록 인구</button><button data-denom="daytime" aria-pressed="false" disabled title="주간인구 원자료를 추가하면 사용할 수 있습니다">주간인구 (2020)</button></div><label class="filter"><input id="metro" type="checkbox">지하철 노선</label></section>
 <section class="bar" data-panel="specialty" hidden aria-label="과목별 전문의"><label for="specialty">과목별 전문의 수</label><select id="specialty" disabled style="font:inherit;padding:8px 12px;border:1px solid #cedde4;border-radius:8px;background:white"><option value="">과목 데이터 불러오는 중</option></select><label for="specialty-scale">표시 기준</label><select id="specialty-scale" style="font:inherit;padding:8px 12px;border:1px solid #cedde4;border-radius:8px;background:white"><option value="count">실제 인원수</option><option value="rate">인구 1만 명당</option></select></section>
 <section class="bar period-controls" data-panel="events" hidden aria-label="개업·폐업 기간 선택">
-<label for="event-mode">조회 기간</label><select id="event-mode" disabled><option value="single">연도별</option><option value="range">기간 누적</option></select>
+<label for="event-mode">조회 기간</label><select id="event-mode" disabled><option value="single">연도별</option><option value="range" selected>기간 누적 · 직접 지정</option></select>
 <button id="event-prev" disabled aria-label="이전 연도로 이동">← 이전</button><strong id="event-selection">불러오는 중</strong><button id="event-next" disabled aria-label="다음 연도로 이동">다음 →</button>
-<button id="event-decade">2010–2019</button><button id="event-all">전체 기간</button>
-<div class="year-sliders"><label>시작 연도 <output id="event-start-value"></output><input id="event-start" aria-label="시작 연도" type="range" min="2000" max="2025" step="1" value="2025" disabled></label><label id="event-end-wrap" hidden>종료 연도 <output id="event-end-value"></output><input id="event-end" aria-label="종료 연도" type="range" min="2000" max="2025" step="1" value="2025" disabled></label></div>
+<button id="event-all">전체 기간</button>
+<div class="year-sliders"><label>시작 연도 <input id="event-start-value" aria-label="시작 연도 직접 입력" type="number" min="2000" max="2025" step="1" value="2025" disabled><input id="event-start" aria-label="시작 연도" type="range" min="2000" max="2025" step="1" value="2025" disabled></label><label id="event-end-wrap">종료 연도 <input id="event-end-value" aria-label="종료 연도 직접 입력" type="number" min="2000" max="2025" step="1" value="2025" disabled><input id="event-end" aria-label="종료 연도" type="range" min="2000" max="2025" step="1" value="2025" disabled></label></div>
 <span id="trend-title" style="font-size:12px;color:var(--muted)"></span><div id="event-trend" aria-label="전국 연도별 추이"></div>
 </section>
 <section id="district" class="layout"><div id="map" class="map"></div><aside><div class="metric"><span>분석 시군구</span><strong id="district-count">–</strong></div><div class="metric"><span id="district-label">치과기관 합계</span><strong id="district-total">–</strong></div><div class="metric"><span id="district-rate-label">전국 평균 · 주민등록 인구 1만 명당</span><strong id="district-rate">–</strong></div><h2 id="district-title">주민등록 인구 대비 치과기관 수 상위 10곳</h2><ol id="district-ranking"></ol></aside></section>
@@ -375,7 +375,7 @@ function selectPeriod(first,last){
 if(!Y)return;const years=Object.keys(Y.years).map(Number),min=Math.min(...years),max=Math.max(...years);
 year=Math.max(min,Math.min(max,Number(first)));yearEnd=Math.max(year,Math.min(max,Number(last)));
 document.querySelector('#event-start').value=year;document.querySelector('#event-end').value=yearEnd;
-document.querySelector('#event-start-value').textContent=year+'년';document.querySelector('#event-end-value').textContent=yearEnd+'년';
+document.querySelector('#event-start-value').value=year;document.querySelector('#event-end-value').value=yearEnd;
 document.querySelector('#event-end-wrap').hidden=document.querySelector('#event-mode').value==='single';
 document.querySelector('#event-selection').textContent=periodLabel();
 E=aggregateYears(year,yearEnd);O=E;eventPanel(E);applyEvents();applyLocalOpenings();redraw();
@@ -385,7 +385,7 @@ let periodFrame;
 function sliderPeriod(which){
 const a=+document.querySelector('#event-start').value,b=+document.querySelector('#event-end').value,single=document.querySelector('#event-mode').value==='single';
 const first=single?a:(which==='end'?Math.min(a,b):a),last=single?a:(which==='start'?Math.max(a,b):b);
-document.querySelector('#event-start-value').textContent=first+'년';document.querySelector('#event-end-value').textContent=last+'년';
+document.querySelector('#event-start-value').value=first;document.querySelector('#event-end-value').value=last;
 clearTimeout(periodFrame);periodFrame=setTimeout(()=>selectPeriod(first,last),100);
 }
 function setupPeriods(){
@@ -394,7 +394,7 @@ for(const id of ['event-start','event-end']){const el=document.querySelector('#'
 document.querySelector('#event-mode').disabled=false;
 document.querySelector('#event-mode').onchange=e=>{clearTimeout(periodFrame);selectPeriod(year,e.target.value==='single'?year:yearEnd)};
 for(const [id,delta] of [['event-prev',-1],['event-next',1]])document.querySelector('#'+id).onclick=()=>{clearTimeout(periodFrame);selectPeriod(year+delta,yearEnd+delta)};
-document.querySelector('#event-decade').onclick=()=>{clearTimeout(periodFrame);document.querySelector('#event-mode').value='range';selectPeriod(2010,2019)};
+for(const id of ['event-start-value','event-end-value']){const el=document.querySelector('#'+id);el.min=Math.min(...years);el.max=Math.max(...years);el.disabled=false;el.onchange=()=>{if(!el.checkValidity()||el.value==='')return;clearTimeout(periodFrame);const value=Number(el.value),single=document.querySelector('#event-mode').value==='single';if(id==='event-start-value')selectPeriod(value,single?value:Math.max(value,yearEnd));else selectPeriod(Math.min(year,value),value)};}
 document.querySelector('#event-all').onclick=()=>{clearTimeout(periodFrame);document.querySelector('#event-mode').value='range';selectPeriod(Math.min(...years),Math.max(...years))};
 selectPeriod(Y.defaultYear,Y.defaultYear);
 }
