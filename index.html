@@ -1,4 +1,4 @@
-<!doctype html><html lang="ko"><meta name="robots" content="noindex, nofollow, noarchive"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>치과 입지 지도</title><style>
+<!doctype html><html lang="ko"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex, nofollow, noarchive"><title>치과 입지 지도</title><style>
 :root{--ink:#112334;
 --muted:#647786;
 --line:#d9e5ea;
@@ -127,23 +127,52 @@ padding:9px 0;
 border-top:1px solid #edf1f3;
 font-size:.84rem}.rank{width:20px;
 color:var(--muted)}li b{margin-left:auto;
-color:var(--blue)}footer{margin-top:14px;
+color:var(--blue)}.events{margin-top:18px;
+padding:22px 28px;
+border:1px solid var(--line);
+border-radius:16px;
+background:#fff}.events-head{display:flex;
+justify-content:space-between;
+gap:16px;
+align-items:baseline;
+flex-wrap:wrap}.events h2{margin:0;
+font-size:1.1rem}.events-period{color:var(--muted);
+font-size:.84rem;
+font-weight:700}.event-totals{display:flex;
+gap:10px;
+margin:15px 0}.event-total{padding:8px 11px;
+border-radius:8px;
+font-size:.85rem;
+font-weight:800}.event-total.opening{background:#e8f7ee;
+color:#168044}.event-total.closure{background:#fdecec;
+color:#c83f3f}.event-lists{display:grid;
+grid-template-columns:1fr 1fr;
+gap:28px}.event-list h3{margin:4px 0 7px;
+font-size:.95rem}.event-list ol{counter-reset:event-rank}.event-list li{padding:8px 0}.event-list li::before{counter-increment:event-rank;
+content:counter(event-rank);
+width:20px;
+color:var(--muted)}.event-list b{color:inherit}.event-list.opening h3,.event-list.opening b{color:#168044}.event-list.closure h3,.event-list.closure b{color:#c83f3f}footer{margin-top:14px;
 color:var(--muted);
 font-size:.75rem;
 line-height:1.55}footer a{color:inherit}@media(max-width:900px){main{padding:20px 16px}header{align-items:start;
 flex-direction:column}.layout{grid-template-columns:1fr}.map{height:65vh;
-min-height:430px}aside{min-height:auto}.note{width:100%;
+min-height:430px}aside{min-height:auto}.event-lists{grid-template-columns:1fr;
+gap:16px}.note{width:100%;
 margin-left:0}}
 </style><body><main>
 <header><div><h1>치과 입지 지도</h1><p id="subtitle">시군구별 주민등록 인구 대비 치과 지표 분포</p></div><div class="actions"><div class="switch"><button data-view="district" aria-pressed="true">시군구</button><button data-view="local" aria-pressed="false">읍면동</button></div><div class="asof">2026년 6월 기준</div></div></header>
-<section class="bar"><span class="label">지도 지표</span><div class="switch"><button data-metric="dentalFacilities" aria-pressed="true">치과기관 수</button><button data-metric="dentalDentists" aria-pressed="false">치과의사 수</button><button data-metric="dentalSpecialists" aria-pressed="false">치과전문의 수</button></div><span class="label">비교 기준</span><div class="switch"><button data-denom="resident" aria-pressed="true">주민등록 인구</button><button data-denom="daytime" aria-pressed="false" disabled title="주간인구 원자료를 추가하면 사용할 수 있습니다">주간인구 (2020)</button></div><label class="filter"><input id="exclude" type="checkbox">치과교정과 기관 제외</label><label class="filter"><input id="metro" type="checkbox">지하철 노선</label><span class="note">전문의는 전체 인원만 제공합니다. 세부 진료과목별 전문의 수는 원본에 없습니다.</span></section>
+<section class="bar"><span class="label">지도 지표</span><div class="switch"><button data-metric="dentalFacilities" aria-pressed="true">치과기관 수</button><button data-metric="dentalDentists" aria-pressed="false">치과의사 수</button><button data-metric="dentalSpecialists" aria-pressed="false">치과전문의 수</button><button data-metric="openings" aria-pressed="false">신규개원</button><button data-metric="closures" aria-pressed="false">폐업</button></div><span class="label">비교 기준</span><div class="switch"><button data-denom="resident" aria-pressed="true">주민등록 인구</button><button data-denom="daytime" aria-pressed="false" disabled title="주간인구 원자료를 추가하면 사용할 수 있습니다">주간인구 (2020)</button></div><label class="filter"><input id="exclude" type="checkbox">치과교정과 기관 제외</label><label class="filter"><input id="metro" type="checkbox">지하철 노선</label><span class="note">신규개원·폐업은 최근 12개월 시군구별 발생 건수입니다.</span></section>
+<section class="bar" aria-label="과목별 전문의"><label for="specialty">과목별 전문의 수</label><select id="specialty" disabled style="font:inherit;padding:8px 12px;border:1px solid #cedde4;border-radius:8px;background:white"><option value="">과목 데이터 불러오는 중</option></select><label for="specialty-scale">표시 기준</label><select id="specialty-scale" style="font:inherit;padding:8px 12px;border:1px solid #cedde4;border-radius:8px;background:white"><option value="count">실제 인원수</option><option value="rate">인구 1만 명당</option></select><p id="specialty-note" style="width:100%;margin:0;font-size:14px;line-height:1.6" aria-live="polite">과목을 선택하면 시군구·읍면동별 전문의 수를 볼 수 있습니다.</p></section>
+<section class="bar" aria-label="개업·폐업 연도 선택"><label for="event-year">개업·폐업 연도</label><select id="event-year" disabled style="font:inherit;padding:8px 12px;border:1px solid #cedde4;border-radius:8px;background:white"><option>불러오는 중</option></select><span>2000~2025년 · 26개 연도</span><p id="event-note" style="width:100%;margin:0;font-size:14px;line-height:1.6" aria-live="polite">연도 선택은 개업·폐업 지도와 아래 순위에 적용됩니다. 기관·인력 지도는 2026년 6월 기준입니다.</p></section>
+<details style="margin:0 0 18px;font-size:14px;line-height:1.7"><summary>개업·폐업 자료와 위치 확인 범위</summary><p id="recovery-summary">API 집계 기준을 불러오는 중입니다.</p><p>신규개원은 인허가일, 폐업은 폐업 상태와 폐업일을 기준으로 집계합니다. 날짜·상태가 충돌하거나 종별이 불명확한 기록은 보류합니다. 심평원·서울시 개폐업 건수를 합산하지 않습니다.</p><p>읍면동은 API 기재 주소의 위치를 현재 배포 경계에 배정한 결과입니다. 좌표가 없을 때 이름·종별·주소가 정확히 일치하는 보유 심평원 좌표만 보완합니다. 좌표 충돌·경계 50m 이내·위치 미확인 기록은 읍면동에서 보류하고 전체 건수에는 포함합니다. 지도에 배정된 기록이 없다는 것은 실제 개폐업이 없었다는 뜻이 아닙니다.</p><p>자료: <a href="https://www.data.go.kr./15154874/openapi.do" target="_blank" rel="noopener">행정안전부 의원 API</a> · <a href="https://www.data.go.kr./15154458/openapi.do" target="_blank" rel="noopener">병원 API</a> · <a href="./api-yearly-events.json" download>연도별 지도 집계 내려받기 (JSON)</a></p></details>
 <section id="district" class="layout"><div id="map" class="map"></div><aside><div class="metric"><span>분석 시군구</span><strong id="district-count">–</strong></div><div class="metric"><span id="district-label">치과기관 합계</span><strong id="district-total">–</strong></div><div class="metric"><span id="district-rate-label">전국 평균 · 주민등록 인구 1만 명당</span><strong id="district-rate">–</strong></div><h2 id="district-title">주민등록 인구 대비 치과기관 수 상위 10곳</h2><ol id="district-ranking"></ol></aside></section>
 <section id="local" class="layout" hidden><div id="local-map" class="map"></div><aside><div class="metric"><span>분석 읍면동</span><strong id="local-count">–</strong></div><div class="metric"><span id="local-label">치과기관 합계</span><strong id="local-total">–</strong></div><div class="metric"><span id="local-rate-label">전국 평균 · 주민등록 인구 1만 명당</span><strong id="local-rate">–</strong></div><h2 id="local-title">주민등록 인구 대비 치과기관 수 상위 10곳</h2><ol id="local-ranking"></ol></aside></section>
-<footer id="foot">색상은 선택한 지표의 인구 1만 명당 값입니다. 분석 대상은 치과의원·일반 치과병원이며, 대학·치과대학 부속 치과병원은 제외합니다. 인구: <a href="https://jumin.mois.go.kr/" target="_blank">행정안전부 주민등록 인구통계</a> 2026년 6월. 기관·인력: 건강보험심사평가원 전국 병의원 및 약국 현황 2026년 6월. ‘치과교정과 기관 제외’는 기관명에 ‘치과교정과’를 명시한 기관만 제외합니다.</footer>
+<section class="events" aria-labelledby="events-title"><div class="events-head"><h2 id="events-title">지역별 신규개원 · 폐업</h2><span id="events-period" class="events-period">개·폐업 이력을 불러오는 중입니다.</span></div><div id="event-totals" class="event-totals"></div><div class="event-lists"><div class="event-list opening"><h3>신규개원 상위 지역</h3><ol id="opening-ranking"></ol></div><div class="event-list closure"><h3>폐업 상위 지역</h3><ol id="closure-ranking"></ol></div></div></section>
+<footer id="foot">분석 대상은 치과의원·일반 치과병원이며, 대학·치과대학 부속 치과병원은 제외합니다. 인구: <a href="https://jumin.mois.go.kr/" target="_blank">행정안전부 주민등록 인구통계</a> 2026년 6월. 기관·인력: 건강보험심사평가원 전국 병의원 및 약국 현황 2026년 6월. ‘치과교정과 기관 제외’는 기관명에 ‘치과교정과’를 명시한 기관만 제외하며 개업·폐업에는 적용하지 않습니다.</footer>
 </main><script>
-const S={metric:'dentalFacilities',exclude:false,denom:'resident'},M={dentalFacilities:['치과기관 수','곳','orthodonticFacilities'],dentalDentists:['치과의사 수','명','orthodonticDentists'],dentalSpecialists:['치과전문의 수','명','orthodonticSpecialists']},nf=n=>new Intl.NumberFormat('ko-KR').format(n||0),key=s=>(s||'').replace(/\s+/g,''),v=p=>Math.max(0,(p[S.metric]||0)-(S.exclude?(p[M[S.metric][2]]||0):0)),base=p=>S.denom==='daytime'?p.daytimePopulation:p.population,dname=()=>S.denom==='daytime'?'주간인구 (2020)':'주민등록 인구',rate=p=>base(p)?v(p)/base(p)*1e4:null,polys=g=>g.type==='Polygon'?[g.coordinates]:g.coordinates,coords=g=>polys(g).flatMap(x=>x.flat());
+const S={metric:'dentalFacilities',exclude:false,denom:'resident',specialty:'',specialtyScale:'count'},M={specialty:['과목별 전문의 수','명',null],dentalFacilities:['치과기관 수','곳','orthodonticFacilities'],dentalDentists:['치과의사 수','명','orthodonticDentists'],dentalSpecialists:['치과전문의 수','명','orthodonticSpecialists'],openings:['신규개원','곳',null],closures:['폐업','곳',null]},nf=n=>new Intl.NumberFormat('ko-KR').format(n||0),key=s=>(s||'').replace(/\s+/g,''),isEvent=()=>S.metric==='openings'||S.metric==='closures',isSpecialty=()=>S.metric==='specialty',isCount=()=>isEvent()||(isSpecialty()&&S.specialtyScale==='count'),v=p=>isSpecialty()?Math.max(0,(p.specialties?.counts?.[S.specialty]||0)-(S.exclude?(p.specialties?.orthodontic?.[S.specialty]||0):0)):isEvent()?(p[S.metric]||0):Math.max(0,(p[S.metric]||0)-(S.exclude?(p[M[S.metric][2]]||0):0)),base=p=>S.denom==='daytime'?p.daytimePopulation:p.population,dname=()=>S.denom==='daytime'?'주간인구 (2020)':'주민등록 인구',rate=p=>isCount()?v(p):(base(p)?v(p)/base(p)*1e4:null),polys=g=>g.type==='Polygon'?[g.coordinates]:g.coordinates,coords=g=>polys(g).flatMap(x=>x.flat());
 
-const COLOR_MIN=0,COLOR_MAX=10,paint=x=>{let t=Math.max(0,Math.min(1,(x-COLOR_MIN)/(COLOR_MAX-COLOR_MIN)))*2,i=Math.min(1,Math.floor(t)),a=[[232,244,248],[79,174,195],[7,61,98]][i],b=[[232,244,248],[79,174,195],[7,61,98]][i+1];
+const COLOR_MIN=0,scaleMax=F=>{let values=F.map(f=>rate(f.properties)).filter(x=>x!=null&&x>0).sort((a,b)=>a-b);if(!values.length)return 1;let value=values[Math.floor((values.length-1)*(isEvent()?.95:.9))];return value>=10?Math.ceil(value):Math.ceil(value*2)/2},paint=(x,max)=>{let t=Math.max(0,Math.min(1,(x-COLOR_MIN)/(max-COLOR_MIN)))*2,i=Math.min(1,Math.floor(t)),stops=isEvent()?(S.metric==='openings'?[[232,248,237],[89,190,120],[17,112,54]]:[[255,235,235],[238,127,127],[181,43,43]]):[[232,244,248],[79,174,195],[7,61,98]],a=stops[i],b=stops[i+1];
 return'rgb('+a.map((n,j)=>Math.round(n+(b[j]-n)*(t-i))).join(',')+')'},mc=n=>({서울1호선:'#0052a4',서울2호선:'#00a84d',서울3호선:'#ef7c1c',서울4호선:'#00a5de',서울5호선:'#996cac',서울6호선:'#cd7c2f',서울7호선:'#747f00',서울8호선:'#e6186c',서울9호선:'#bb8336',부산1호선:'#f06a00',부산2호선:'#7ac143',부산3호선:'#bb8cce',부산4호선:'#1d9bb7',대구1호선:'#d93a46',대구2호선:'#00a54f',대구3호선:'#f5a900',대전1호선:'#007448',광주1호선:'#009088',인천1호선:'#7ca8d6',인천2호선:'#f06a2e',부산김해경전철:'#7c5db6',경강선:'#003da5',경의중앙선:'#77c4a3',경춘선:'#00a4e3',공항철도:'#0090d8',김포골드라인:'#a17800',서해선:'#8fc31f',수인분당선:'#f5c700',신분당선:'#d4003b',용인에버라인:'#6fb245',우이신설선:'#b7c452',의정부경전철:'#f58b39'}[n]||'#586b78');
 
 function draw(el,F,C=[],state){el.replaceChildren();
@@ -161,14 +190,14 @@ q.forEach(([x,y])=>{x0=Math.min(x0,x);
 x1=Math.max(x1,x);
 y0=Math.min(y0,y);
 y1=Math.max(y1,y)});
-let c=Math.cos(36.5*Math.PI/180),sc=Math.min((W-80)/((x1-x0)*c),(H-80)/(y1-y0)),ox=(W-(x1-x0)*c*sc)/2-x0*c*sc,oy=(H-(y1-y0)*sc)/2+y1*sc,pr=([x,y])=>[x*c*sc+ox,-y*sc+oy],path=g=>polys(g).map(p=>p.map(r=>r.map((q,i)=>(i?'L':'M')+pr(q).join(' ')).join(' ')+'Z').join(' ')).join(' ');
+let c=Math.cos(36.5*Math.PI/180),sc=Math.min((W-80)/((x1-x0)*c),(H-80)/(y1-y0)),ox=(W-(x1-x0)*c*sc)/2-x0*c*sc,oy=(H-(y1-y0)*sc)/2+y1*sc,pr=([x,y])=>[x*c*sc+ox,-y*sc+oy],path=g=>polys(g).map(p=>p.map(r=>r.map((q,i)=>(i?'L':'M')+pr(q).join(' ')).join(' ')+'Z').join(' ')).join(' '),max=scaleMax(F);
 F.forEach(f=>{let p=f.properties,e=document.createElementNS(svg.namespaceURI,'path');
 e.setAttribute('d',path(f.geometry));
 e.setAttribute('class','area');
-e.setAttribute('fill',rate(p)==null?'#c8d8de':paint(rate(p)));
+e.setAttribute('fill',rate(p)==null?'#c8d8de':paint(rate(p),max));
 e.onmousemove=q=>{if(drag)return;
 let r=el.getBoundingClientRect(),z=rate(p);
-tip.innerHTML='<strong>'+p.name+'</strong><br>인구 1만 명당 <b>'+(z==null?'–':z.toFixed(2)+M[S.metric][1])+'</b><br>'+M[S.metric][0]+' '+nf(v(p))+M[S.metric][1]+' · '+dname()+' '+nf(base(p))+'명';
+tip.innerHTML='<strong>'+p.name+'</strong><br>'+(isCount()?M[S.metric][0]+' <b>'+nf(v(p))+M[S.metric][1]+'</b>':('인구 1만 명당 <b>'+(z==null?'–':z.toFixed(2)+M[S.metric][1])+'</b><br>'+M[S.metric][0]+' '+nf(v(p))+M[S.metric][1]+' · '+dname()+' '+nf(base(p))+'명'));
 tip.style.left=q.clientX-r.left+'px';
 tip.style.top=q.clientY-r.top+'px';
 tip.classList.add('on')};
@@ -228,9 +257,19 @@ apply(true)};
 el.append(cc);
 let l=document.createElement('div');
 l.className='legend';
-l.innerHTML='<b>인구 1만 명당 '+M[S.metric][0]+'</b><div class="scale"></div><div class="lr"><span>'+COLOR_MIN+'</span><span>'+COLOR_MAX+' 이상</span></div>';
-el.append(l)}
+l.innerHTML='<b>'+(isEvent()?year+'년 '+M[S.metric][0]+' (확인 기록)':isCount()?M[S.metric][0]+' (명)':'인구 1만 명당 '+M[S.metric][0])+'</b><div class="scale"></div><div class="lr"><span>'+COLOR_MIN+'</span><span>'+max+' 이상</span></div>';
+if(isEvent())l.querySelector('.scale').style.background=S.metric==='openings'?'linear-gradient(90deg,rgb(232,248,237),rgb(89,190,120),rgb(17,112,54))':'linear-gradient(90deg,rgb(255,235,235),rgb(238,127,127),rgb(181,43,43))';
+el.append(l);apply()}
 function panel(k,F,s){let p=F.reduce((x,f)=>x+(base(f.properties)||0),0),n=F.reduce((x,f)=>x+v(f.properties),0),u=M[S.metric];
+if(isCount()){let active=F.filter(f=>v(f.properties)>0),top=active.sort((a,b)=>v(b.properties)-v(a.properties))[0];
+document.querySelector('#'+k+'-count').textContent=nf(active.length)+s;
+document.querySelector('#'+k+'-label').textContent=(isEvent()?year+'년 ':'')+u[0]+' · 지도 연결분';
+document.querySelector('#'+k+'-total').textContent=nf(n)+u[1];
+document.querySelector('#'+k+'-rate-label').textContent=isEvent()?'최다 발생 지역':'전문의 수 최다 지역';
+document.querySelector('#'+k+'-rate').textContent=top?top.properties.name+' '+nf(v(top.properties))+u[1]:'–';
+document.querySelector('#'+k+'-title').textContent=(isEvent()?year+'년 ':'')+u[0]+' 상위 10곳';
+document.querySelector('#'+k+'-ranking').innerHTML=active.slice(0,10).map((f,i)=>'<li><span class="rank">'+(i+1)+'</span><span>'+f.properties.name+'</span><b>'+nf(v(f.properties))+u[1]+'</b></li>').join('');
+return}
 document.querySelector('#'+k+'-count').textContent=nf(F.length)+s;
 document.querySelector('#'+k+'-label').textContent=u[0]+' 합계';
 document.querySelector('#'+k+'-total').textContent=nf(n)+u[1];
@@ -238,24 +277,59 @@ document.querySelector('#'+k+'-rate-label').textContent='전국 평균 · '+dnam
 document.querySelector('#'+k+'-rate').textContent=p?(n/p*1e4).toFixed(2)+u[1]:'–';
 document.querySelector('#'+k+'-title').textContent=dname()+' 대비 '+u[0]+' 상위 10곳';
 document.querySelector('#'+k+'-ranking').innerHTML=F.filter(f=>rate(f.properties)!=null).sort((a,b)=>rate(b.properties)-rate(a.properties)).slice(0,10).map((f,i)=>'<li><span class="rank">'+(i+1)+'</span><span>'+f.properties.name+'</span><b>'+rate(f.properties).toFixed(2)+u[1]+'</b></li>').join('')}
-let D,L,T,V={district:{z:1,px:0,py:0},local:{z:1,px:0,py:0}};
-function redraw(){if(D&&L){draw(document.querySelector('#map'),D,[],V.district);
-draw(document.querySelector('#local-map'),L,D,V.local);
-panel('district',D,'곳');
-panel('local',L,'곳')}}function view(local){if(local&&S.denom==='daytime')S.denom='resident';
+function eventPanel(d){let p=d.period,start=p.start.slice(0,7).replace('-','년 ')+'월',end=p.end.slice(0,7).replace('-','년 ')+'월',rank=(type,target)=>document.querySelector(target).innerHTML=d.regions.filter(x=>x[type]).sort((a,b)=>b[type]-a[type]||a.name.localeCompare(b.name,'ko')).slice(0,10).map(x=>'<li><span>'+x.name+'</span><b>'+nf(x[type])+'곳</b></li>').join('');
+document.querySelector('#events-period').textContent=start+' ~ '+end+' 기준';
+document.querySelector('#event-totals').innerHTML='<span class="event-total opening">신규개원 '+nf(d.totals.openings)+'곳</span><span class="event-total closure">폐업 '+nf(d.totals.closures)+'곳</span>';
+rank('openings','#opening-ranking');rank('closures','#closure-ranking')}
+let D,L,T,E,O,Y,SP,year=2025,eventError=false,localLoad,V={district:{z:1,px:0,py:0},local:{z:1,px:0,py:0}};
+function applySpecialties(){if(!SP)return;for(let [features,level] of [[D,'district'],[L,'local']])if(features)features.forEach(f=>{let p=SP[level][f.properties.code]||{counts:{},orthodontic:{}};for(let field of ['counts','orthodontic']){p[field].__TOTAL__=SP.specialties.reduce((n,s)=>n+(p[field][s]||0),0);p[field].__WITHOUT_GENERAL__=p[field].__TOTAL__-(p[field]['통합치의학과']||0);}f.properties.specialties=p})}
+fetch('./specialties.json').then(r=>{if(!r.ok)throw Error('과목 데이터 요청 실패');return r.json()}).then(d=>{SP=d;applySpecialties();let select=document.querySelector('#specialty');select.innerHTML='<option value="">과목 선택</option><option value="__TOTAL__">전체 과목 합계 (복수자격 포함)</option><option value="__WITHOUT_GENERAL__">전체 과목 합계 (통합치의학과 제외)</option>'+d.specialties.map(s=>'<option>'+s+'</option>').join('');select.disabled=false;document.querySelector('#specialty-note').textContent='과목별 집계는 개원가 치과의원·일반 치과병원 기준입니다. 기관명 기준으로 대학·부속치과, 군 의료기관, 장애인치과병원, 교정시설 등을 제외합니다. 2026년 6월 기관 목록에 심평원 상세페이지 수집 당시 인원을 연결했습니다. 전체 과목 합계는 11개 과목의 합산값이며, 통합치의학과 제외 합계는 나머지 10개 과목의 합산값입니다. 두 합계 모두 복수 전문자격을 중복 포함하므로 고유 인원수가 아닙니다. 원문 미확인 '+nf(d.coverage.unverifiedFacilities)+'개 기관 제외 · 위치 미연결: 시군구 '+nf(d.coverage.districtUnmatched)+'곳, 읍면동 '+nf(d.coverage.localUnmatched)+'곳.';redraw()}).catch(()=>{document.querySelector('#specialty').innerHTML='<option value="">불러오기 실패</option>';document.querySelector('#specialty-note').textContent='과목별 전문의 데이터를 불러오지 못했습니다. 새로고침해 주세요.'});
+document.querySelector('#specialty').onchange=e=>{if(!e.target.value)return;S.specialty=e.target.value;S.metric='specialty';M.specialty[0]=S.specialty==='__TOTAL__'?'전체 과목 전문의 수 (복수자격 포함)':S.specialty==='__WITHOUT_GENERAL__'?'전문의 합계 (통합치의학과 제외·복수자격 포함)':S.specialty+' 전문의 수';document.querySelectorAll('[data-metric]').forEach(b=>b.setAttribute('aria-pressed','false'));redraw()};
+document.querySelector('#specialty-scale').onchange=e=>{S.specialtyScale=e.target.value;redraw()};
+const SIDO_PREFIX={서울:'11',부산:'21',대구:'22',인천:'23',광주:'24',대전:'25',울산:'26',세종시:'29',경기:'31',강원:'32',충북:'33',충남:'34',전북:'35',전남:'36',경북:'37',경남:'38',제주:'39'};
+function eventKey(name){return key(name).replace(/시(?=[가-힣]+구$)/,'')}
+function applyEvents(){if(!D||!E)return;
+D.forEach(f=>{let n=E.districts[f.properties.code];f.properties.openings=n?.openings||0;f.properties.closures=n?.closures||0})}
+function applyLocalOpenings(){if(!L||!O)return;
+L.forEach(f=>{f.properties.openings=O.openingsByCode[f.properties.code]||0;f.properties.closures=O.closuresByCode?.[f.properties.code]||0});
+}
+function eventLabels(){let local=!document.querySelector('#local').hidden;
+document.querySelector('#specialty').value=isSpecialty()?S.specialty:'';
+document.querySelector('#specialty-scale').disabled=!isSpecialty();
+if(!isEvent())document.querySelector('#subtitle').textContent=(local?'읍면동':'시군구')+'별 '+(isCount()?'':dname()+' 대비 ')+M[S.metric][0];
+document.querySelector('.note').textContent='개업·폐업은 선택 연도의 확인 기록 건수이며, 인구 대비 값이 아닙니다.';
+document.querySelector('.asof').textContent=isEvent()?year+'년 개업·폐업':'2026년 6월 기준';
+document.querySelector('#exclude').disabled=isEvent();
+document.querySelectorAll('[data-denom]').forEach(b=>b.disabled=isCount()||(b.dataset.denom==='daytime'&&(local||!b.dataset.ready)));
+if(isEvent())document.querySelector('#subtitle').textContent=(local?'읍면동':'시군구')+'별 '+year+'년 '+M[S.metric][0]+' 확인 기록';
+if(Y&&E){let c=E.coverage,t=E.totals;
+document.querySelector('#event-note').textContent=year+'년 · 신규개원 전체 '+nf(t.openings)+'건 / 읍면동 연결 '+nf(c.localOpenings)+'건 / 미배정 '+nf(t.openings-c.localOpenings)+'건. 폐업 전체 '+nf(t.closures)+'건 / 읍면동 연결 '+nf(c.localClosures)+'건 / 미배정 '+nf(t.closures-c.localClosures)+'건. 시군구 연결: 신규개원 '+nf(c.districtOpenings)+'건, 폐업 '+nf(c.districtClosures)+'건. '+Y.notes.locations;
+document.querySelector('#recovery-summary').textContent=Y.source+' · 수집 '+Y.collectedAt+'. '+Y.notes.openings+' '+Y.notes.closures+' '+Y.notes.range}}
+function redraw(){eventLabels();if(isEvent()&&!E){for(let k of ['district','local']){document.querySelector(k==='district'?'#map':'#local-map').textContent=eventError?'연도별 데이터를 불러오지 못했습니다. 새로고침해 주세요.':'연도별 데이터를 불러오는 중입니다.';for(let suffix of ['count','total','rate'])document.querySelector('#'+k+'-'+suffix).textContent='–';document.querySelector('#'+k+'-ranking').replaceChildren()}return}if(D){draw(document.querySelector('#map'),D,[],V.district);
+panel('district',D,'곳')}if(L){draw(document.querySelector('#local-map'),L,D||[],V.local);
+panel('local',L,'곳')}}function loadLocal(){if(localLoad)return localLoad;
+document.querySelector('#local-map').textContent='읍면동 지도 데이터를 불러오는 중입니다.';
+localLoad=fetch('./eupmyeondong-boundaries.json').then(r=>{if(!r.ok)throw Error('읍면동 경계 데이터 요청 실패');
+return r.json()}).then(d=>{L=d.features;
+applySpecialties();
+applyLocalOpenings();
+redraw()}).catch(()=>{document.querySelector('#local-map').textContent='읍면동 지도 데이터를 불러오지 못했습니다.'});
+return localLoad}function view(local){if(local&&S.denom==='daytime')S.denom='resident';
 let b=document.querySelector('[data-denom="daytime"]');
 b.disabled=local||!b.dataset.ready;
 document.querySelectorAll('[data-denom]').forEach(x=>x.setAttribute('aria-pressed',x.dataset.denom===S.denom));
 document.querySelector('#district').hidden=local;
 document.querySelector('#local').hidden=!local;
-document.querySelector('#subtitle').textContent=local?'읍면동별 주민등록 인구 대비 치과 지표 분포':'시군구별 '+dname()+' 대비 치과 지표 분포';
+document.querySelector('#subtitle').textContent=local?(S.metric==='openings'?'읍면동별 최근 12개월 신규개원 현황':'읍면동별 주민등록 인구 대비 치과 지표 분포'):(isEvent()?'시군구별 최근 12개월 '+M[S.metric][0]+' 현황':'시군구별 '+dname()+' 대비 치과 지표 분포');
 document.querySelectorAll('[data-view]').forEach(x=>x.setAttribute('aria-pressed',(x.dataset.view==='local')===local));
+if(local)loadLocal();
 redraw()}
-Promise.all(['./district-boundaries.json?v=20260918','./eupmyeondong-boundaries.json?v=20260918c'].map(x=>fetch(x).then(r=>{if(!r.ok)throw Error(x);
-return r.json()}))).then(x=>{D=x[0].features;
-L=x[1].features;
+fetch('./district-boundaries.json').then(r=>{if(!r.ok)throw Error('시군구 경계 데이터 요청 실패');
+return r.json()}).then(d=>{D=d.features;
+applySpecialties();
+applyEvents();
 redraw();
-fetch('./daytime_population_2020.json?v=20260918b').then(r=>r.ok?r.json():null).then(d=>{if(!d)return;
+fetch('./daytime_population_2020.json').then(r=>r.ok?r.json():null).then(d=>{if(!d)return;
 let n=0;
 D.forEach(f=>{let r=d.districts[f.properties.code]||d.districts[key(f.properties.name)];
 if(r){f.properties.daytimePopulation=r.daytimePopulation;
@@ -266,7 +340,10 @@ b.dataset.ready='true';
 b.title='통계청 2020 인구주택총조사 통근·통학 기반 주간인구';
 document.querySelector('#foot').insertAdjacentText('beforeend',' 주간인구: 통계청 2020 인구주택총조사 표본(20%) 통근·통학.')}}).catch(()=>{});
 fetch('./transport-network.json').then(r=>r.ok?r.json():null).then(x=>{T=x;
-if(T)redraw()}).catch(()=>{})}).catch(()=>document.querySelector('#map').textContent='지도 데이터를 불러오지 못했습니다.');
+if(T)redraw()}).catch(()=>{})}).catch(()=>document.querySelector('#map').textContent='시군구 지도 데이터를 불러오지 못했습니다. 새로고침 후에도 계속되면 잠시 뒤 다시 시도해 주세요.');
+function selectYear(value){year=Number(value);E=Y.years[year];O=E;eventPanel(E);applyEvents();applyLocalOpenings();redraw()}
+fetch('./api-yearly-events.json?v=20260921-api1').then(r=>{if(!r.ok)throw Error('연도 자료 요청 실패');return r.json()}).then(d=>{Y=d;let select=document.querySelector('#event-year');select.innerHTML=Object.keys(Y.years).sort((a,b)=>b-a).map(y=>'<option value="'+y+'">'+y+'년</option>').join('');select.value=Y.defaultYear;select.disabled=false;select.onchange=e=>selectYear(e.target.value);selectYear(select.value)}).catch(()=>{eventError=true;document.querySelector('#event-note').textContent='연도별 데이터를 불러오지 못했습니다. 새로고침해 주세요.';document.querySelector('#events-period').textContent='연도별 자료 불러오기 실패';redraw()});
+document.querySelector('#foot').prepend('개업·폐업 지도: 행안부 인허가 API의 치과의원·치과병원 확인 기록(대학·부속치과 포함), 2000~2025년. 신규개원은 인허가일, 폐업은 폐업일·상태 기준입니다. 위치는 API 기재 위치이며 과거 당시 위치를 보장하지 않습니다. 과목별 전문의 지도는 실제 인원수 또는 인구 1만 명당 값을 선택할 수 있으며 기존 인력 지도와 같은 기관명 제외 기준을 적용한 개원가 집계입니다. ');
 
 document.querySelectorAll('[data-metric]').forEach(b=>b.onclick=()=>{S.metric=b.dataset.metric;
 document.querySelectorAll('[data-metric]').forEach(x=>x.setAttribute('aria-pressed',x===b));
