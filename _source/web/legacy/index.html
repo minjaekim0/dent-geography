@@ -1,0 +1,603 @@
+<!doctype html><html lang="ko"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex, nofollow, noarchive"><title>치과 입지 지도</title><style>
+.region-info{padding-bottom:20px;margin-bottom:8px;border-bottom:2px solid var(--line)}.region-info h2{margin:0;font-size:1.05rem}.region-info p{color:var(--muted);font-size:.8rem;line-height:1.6}.region-heading{display:flex;align-items:start;justify-content:space-between;gap:8px}.region-heading button{border:1px solid var(--line);border-radius:6px;background:white;font-size:20px;cursor:pointer}.region-period{margin:8px 0}.region-primary{padding:12px;background:#e6f1f6;border-radius:8px}.region-primary span{font-size:.8rem;display:block}.region-primary strong{display:block;font-size:1.5rem;margin-top:5px}.region-info dl{margin:10px 0}.region-info dl>div{display:flex;justify-content:space-between;gap:12px;font-size:.8rem;padding:7px 0;border-bottom:1px solid #edf1f3}.region-info dt{color:var(--muted)}.region-info dd{margin:0;text-align:right;font-weight:700}.region-specialties summary{cursor:pointer;font-size:.85rem}.selection-outline{fill:none;stroke:#ff9c24;stroke-width:2.5;vector-effect:non-scaling-stroke;pointer-events:none}.area{cursor:pointer}.area:focus-visible{outline:none;stroke:#ff9c24;stroke-width:2}.zoom-level{display:flex;align-items:center;padding:0 9px;background:white;font-size:12px;color:var(--muted)}
+#facility-trend{display:flex;align-items:end;gap:8px;width:100%;touch-action:pan-y;user-select:none;cursor:crosshair}.facility-chart-total{font-size:12px;margin-bottom:5px}.period-controls #facility-trend small{font-size:12px}#facility-trend .trend-year{min-width:65px}
+.map svg:focus,.map .area:focus{outline:none}
+.map .area{-webkit-tap-highlight-color:transparent}
+.map .area:focus-visible{stroke:#ff9c24;stroke-width:2;vector-effect:non-scaling-stroke}
+:root{--ink:#112334;
+--muted:#647786;
+--line:#d9e5ea;
+--blue:#0b5277}*{box-sizing:border-box}body{margin:0;
+background:#f8fafb;
+color:var(--ink);
+font-family:system-ui,-apple-system,"Apple SD Gothic Neo","Noto Sans KR",sans-serif}main{max-width:1500px;
+margin:auto;
+padding:30px 34px}header{display:flex;
+justify-content:space-between;
+align-items:center;
+gap:20px;
+margin-bottom:16px}.title-row{display:flex;flex-wrap:wrap;
+align-items:center;
+gap:10px}h1{margin:0;
+font-size:2rem;
+letter-spacing:-.06em}.kakao-version-link{display:inline-flex;
+align-items:center;
+min-height:30px;
+padding:5px 10px;
+border:1px solid #e7c900;
+border-radius:999px;
+background:#fee500;
+color:#191919;
+font-size:.78rem;
+font-weight:800;
+letter-spacing:-.02em;
+text-decoration:none}.kakao-version-link:hover{background:#f5da00}.kakao-version-link:focus-visible{outline:3px solid #7db7d5;
+outline-offset:2px}header p{margin:7px 0 0;
+color:var(--muted)}.asof{background:#e6f1f6;
+color:#154463;
+border-radius:99px;
+padding:11px 16px;
+font-weight:750}.switch{display:flex;
+overflow:hidden;
+border:1px solid var(--line);
+border-radius:10px;
+background:#fff}.switch button{padding:9px 13px;
+border:0;
+background:#fff;
+color:#4c6473;
+font:700 .88rem inherit;
+cursor:pointer}.switch button+button{border-left:1px solid var(--line)}button[aria-pressed=true]{background:var(--blue);
+color:#fff}.switch button:disabled{cursor:not-allowed;
+background:#f3f6f7;
+color:#9aabb4}.actions{display:flex;
+gap:10px;
+align-items:center;
+flex-wrap:wrap;
+justify-content:flex-end}.bar{display:flex;
+align-items:center;
+gap:12px;
+flex-wrap:wrap;
+padding:12px 14px;
+margin-bottom:16px;
+border:1px solid var(--line);
+border-radius:14px;
+background:#fff}.label{font-size:.85rem;
+font-weight:800;
+color:var(--muted)}.filter{display:flex;
+gap:7px;
+align-items:center;
+font-size:.88rem;
+font-weight:650}.filter input{width:16px;
+height:16px;
+accent-color:var(--blue)}.note{margin-left:auto;
+font-size:.78rem;
+color:var(--muted)}.layout{display:grid;
+grid-template-columns:minmax(0,1fr) 320px;
+gap:18px}[hidden]{display:none!important}.map{position:relative;
+height:calc(100vh - 230px);
+min-height:520px;
+overflow:hidden;
+border:1px solid var(--line);
+border-radius:16px;
+background:#dceaf0}svg{display:block;
+width:100%;
+height:100%;
+touch-action:none;
+cursor:grab}svg.drag{cursor:grabbing}.area{stroke:#8193a0;
+stroke-width:calc(.64px * var(--boundary-scale,1));
+stroke-opacity:.85;
+vector-effect:none}.context{fill:none;
+stroke:#536d7e;
+stroke-width:calc(1.36px * var(--boundary-scale,1));
+stroke-opacity:.9;
+vector-effect:none;
+pointer-events:none}#local-map .context{stroke-width:calc(.68px * var(--boundary-scale,1))}.tooltip{display:none;
+position:absolute;
+z-index:2;
+padding:9px 11px;
+transform:translate(12px,12px);
+border-radius:8px;
+background:#102b3b;
+color:#fff;
+font-size:.82rem;
+line-height:1.55;
+pointer-events:none}.tooltip.on{display:block}.zoom{position:absolute;
+top:14px;
+left:14px;
+display:flex;
+overflow:hidden;
+border-radius:9px;
+box-shadow:0 2px 10px #11233433}.zoom button{width:35px;
+height:35px;
+border:0;
+border-right:1px solid #e1e8eb;
+background:#fff;
+font-size:1.2rem;
+cursor:pointer}.legend{position:absolute;
+left:15px;
+bottom:15px;
+padding:9px 11px;
+border:1px solid #dce5e8;
+border-radius:9px;
+background:#fffffff0;
+font-size:.75rem}.scale{width:150px;
+height:8px;
+margin:7px 0 4px;
+border-radius:99px;
+background:linear-gradient(90deg,rgb(255,255,255),rgb(79,174,195),rgb(7,61,98))}.lr{display:flex;
+justify-content:space-between;
+color:var(--muted)}aside{min-height:520px;
+padding:18px 28px;
+border:1px solid var(--line);
+border-radius:16px;
+background:#fff}.metric{padding:12px 0 18px;
+border-bottom:1px solid var(--line)}.metric span{display:block;
+color:var(--muted);
+font-size:.86rem;
+font-weight:700}.metric strong{display:block;
+margin-top:8px;
+font-size:1.45rem}h2{margin:25px 0 8px;
+font-size:1.05rem}ol{margin:0;
+padding:0;
+list-style:none}li{display:flex;
+gap:9px;
+align-items:center;
+padding:9px 0;
+border-top:1px solid #edf1f3;
+font-size:.84rem}.rank{width:20px;
+color:var(--muted)}li b{margin-left:auto;
+color:var(--blue)}.events{margin-top:18px;
+padding:22px 28px;
+border:1px solid var(--line);
+border-radius:16px;
+background:#fff}.events-head{display:flex;
+justify-content:space-between;
+gap:16px;
+align-items:baseline;
+flex-wrap:wrap}.events h2{margin:0;
+font-size:1.1rem}.events-period{color:var(--muted);
+font-size:.84rem;
+font-weight:700}.event-totals{display:flex;
+gap:10px;
+margin:15px 0}.event-total{padding:8px 11px;
+border-radius:8px;
+font-size:.85rem;
+font-weight:800}.event-total.opening{background:#e8f7ee;
+color:#168044}.event-total.closure{background:#fdecec;
+color:#c83f3f}.event-lists{display:grid;
+grid-template-columns:1fr 1fr;
+gap:28px}.event-list h3{margin:4px 0 7px;
+font-size:.95rem}.event-list ol{counter-reset:event-rank}.event-list li{padding:8px 0}.event-list li::before{counter-increment:event-rank;
+content:counter(event-rank);
+width:20px;
+color:var(--muted)}.event-list b{color:inherit}.event-list.opening h3,.event-list.opening b{color:#168044}.event-list.closure h3,.event-list.closure b{color:#c83f3f}footer{margin-top:14px;
+color:var(--muted);
+font-size:.75rem;
+line-height:1.55}footer a{color:inherit}@media(max-width:900px){main{padding:20px 16px}header{align-items:start;
+flex-direction:column}.layout{grid-template-columns:1fr}.map{height:65vh;
+min-height:430px}aside{min-height:auto}.event-lists{grid-template-columns:1fr;
+gap:16px}.note{width:100%;
+margin-left:0}}
+.period-controls select,.period-controls button{font:inherit;border:1px solid var(--line);border-radius:8px;background:white;padding:7px 10px;cursor:pointer}.year-sliders{display:flex;gap:24px;width:100%;flex-wrap:wrap}.year-sliders label{flex:1;min-width:220px;font-size:13px}.year-sliders output{float:right;font-weight:700}.year-sliders input[type=number]{width:90px;float:right;padding:5px 8px;border:1px solid var(--line);border-radius:6px;font:inherit;font-weight:700}.year-sliders input[type=range]{display:block;width:100%;accent-color:var(--blue);cursor:ew-resize}#event-trend{display:flex;align-items:end;gap:3px;width:100%;overflow-x:auto;padding-top:8px}.period-controls .trend-year{display:flex;flex:1;min-width:28px;flex-direction:column;justify-content:end;align-items:center;padding:3px 1px;border:0;border-bottom:3px solid transparent;background:transparent;color:var(--ink);opacity:.45}.period-controls .trend-year[aria-pressed=true]{opacity:1;border-bottom-color:var(--blue);background:#e6f1f6}.trend-bar{width:80%;border-radius:3px 3px 0 0;display:block}.trend-year small{font-size:9px;margin-top:4px}.signed-trend{display:block;width:90%}.positive-half,.negative-half{display:flex;width:100%;height:50px}.positive-half{align-items:end;border-bottom:1px solid #aab8bf}.positive-half span{width:100%;background:#278552;border-radius:2px 2px 0 0}.negative-half span{width:100%;background:#c04e4e;border-radius:0 0 2px 2px}.period-controls .switch button[aria-pressed=true]{background:var(--blue);color:white}.event-lists{grid-template-columns:repeat(auto-fit,minmax(260px,1fr))}.period-overview{display:grid;grid-template-columns:minmax(240px,1fr) minmax(0,2fr);align-items:center;gap:32px;width:100%}.period-overview .year-sliders{flex-direction:column;gap:18px}.period-overview .year-sliders label{min-width:0;flex:none;width:100%}.period-trend{min-width:0}.period-trend #event-trend{gap:2px}.period-trend .trend-year{min-width:20px}.period-trend .trend-year small{font-size:8px}@media(max-width:800px){.period-overview{grid-template-columns:1fr;gap:20px}.period-trend .trend-year{min-width:24px}}#event-trend{touch-action:pan-y;user-select:none;cursor:crosshair}.period-controls .trend-year{cursor:crosshair}.trend-year:focus-visible{outline:2px solid var(--blue);outline-offset:-2px}</style><body><main>
+<header><div><div class="title-row"><h1>치과 입지 지도</h1><a class="kakao-version-link" href="kakao.html">카카오 ver.</a><a class="kakao-version-link" href="population.html" style="background:#e8f0ff;color:#235bc0">인구 지도</a></div><p id="subtitle">시군구별 주민등록 인구 대비 치과 지표 분포</p></div><div class="actions"><div class="switch"><button data-view="district" aria-pressed="true">시군구</button><button data-view="local" aria-pressed="false">읍면동</button></div><div class="asof">2026년 6월 기준</div></div></header>
+<section class="bar" aria-label="지도 분류"><div class="switch" aria-label="지도 분류 선택"><button data-section="dental" aria-pressed="true">치과 현황</button><button data-section="events" aria-pressed="false">개원/폐업</button></div><label class="filter"><input id="metro" type="checkbox">지하철 노선</label></section>
+<section class="bar" data-panel="dental" aria-label="치과 현황 지표"><span class="label">지도 지표</span><div class="switch"><button data-metric="dentalFacilities" aria-pressed="true">치과기관 수</button><button data-metric="dentalDentists" aria-pressed="false">치과의사 수</button><button data-metric="specialty" aria-pressed="false" disabled>치과전문의 수</button></div><span class="label">비교 기준</span><div class="switch"><button data-denom="resident" aria-pressed="true">주민등록 인구</button><button data-denom="daytime" aria-pressed="false" disabled title="주간인구 원자료를 추가하면 사용할 수 있습니다">주간인구 (2020)</button></div></section>
+<section class="bar period-controls" data-panel="facilities" aria-label="연도별 치과기관 수">
+<span class="label">전국 치과기관 현황</span><button id="facility-prev" disabled>← 이전</button><strong id="facility-selection">2026년 6월 현황</strong><button id="facility-next" disabled>다음 →</button>
+<label for="facility-scale">표시 기준</label><select id="facility-scale" disabled><option value="count">실제 기관 수</option><option value="rate">인구 1만 명당</option></select>
+<div class="period-trend" style="width:100%"><p id="facility-help" style="font-size:13px;color:var(--muted)">연도별 현황을 불러오는 중입니다.</p><div id="facility-trend" aria-label="치과기관 현황 연도 선택 차트"></div></div>
+<span id="facility-rate-note" hidden style="font-size:12px;color:var(--muted)">인구 분모는 고정 기준: 주민등록 2026년 6월 / 주간인구 2020년</span>
+</section>
+<section class="bar" data-panel="specialty" hidden aria-label="과목별 전문의"><label for="specialty">과목별 전문의 수</label><select id="specialty" disabled style="font:inherit;padding:8px 12px;border:1px solid #cedde4;border-radius:8px;background:white"><option value="">과목 데이터 불러오는 중</option></select><label for="specialty-scale">표시 기준</label><select id="specialty-scale" style="font:inherit;padding:8px 12px;border:1px solid #cedde4;border-radius:8px;background:white"><option value="count">실제 인원수</option><option value="rate">인구 1만 명당</option></select></section>
+<section class="bar period-controls" data-panel="events" hidden aria-label="개업·폐업 기간 선택">
+<div class="switch" aria-label="개원·폐업 표시"><button data-event-kind="openings" aria-pressed="false">개원만 보기</button><button data-event-kind="closures" aria-pressed="false">폐업만 보기</button><button data-event-kind="net" aria-pressed="true">동시에 보기 (+/−)</button></div><label for="event-mode">조회 기간</label><select id="event-mode" disabled><option value="single">연도별</option><option value="range" selected>기간 직접 지정</option><option value="window">고정 기간 이동</option></select>
+<button id="event-prev" disabled aria-label="이전 연도로 이동">← 이전</button><strong id="event-selection">불러오는 중</strong><button id="event-next" disabled aria-label="다음 연도로 이동">다음 →</button>
+<div id="window-options" class="switch" aria-label="고정 기간 선택" hidden><button data-window="3" aria-pressed="false" disabled>3년</button><button data-window="5" aria-pressed="false" disabled>5년</button><button data-window="10" aria-pressed="false" disabled>10년</button></div><button id="event-all">전체 기간</button><span id="window-hint" hidden style="font-size:12px;color:var(--muted)">차트에서 기간 이동 · 이전/다음은 1년씩 이동</span>
+<div class="period-trend" style="width:100%"><p id="chart-help" style="font-size:13px;margin:0 0 8px;color:var(--muted)" aria-live="polite"></p><span id="trend-title" style="font-size:12px;color:var(--muted)"></span><div id="event-trend" aria-label="연도 및 기간 선택 차트"></div></div>
+</section>
+<section id="district" class="layout"><div id="map" class="map"></div><aside><div class="metric"><span>분석 시군구</span><strong id="district-count">–</strong></div><div class="metric"><span id="district-label">치과기관 합계</span><strong id="district-total">–</strong></div><div class="metric"><span id="district-rate-label">전국 평균 · 주민등록 인구 1만 명당</span><strong id="district-rate">–</strong></div><h2 id="district-title">주민등록 인구 대비 치과기관 수 상위 10곳</h2><ol id="district-ranking"></ol></aside></section>
+<section id="local" class="layout" hidden><div id="local-map" class="map"></div><aside><div class="metric"><span>분석 읍면동</span><strong id="local-count">–</strong></div><div class="metric"><span id="local-label">치과기관 합계</span><strong id="local-total">–</strong></div><div class="metric"><span id="local-rate-label">전국 평균 · 주민등록 인구 1만 명당</span><strong id="local-rate">–</strong></div><h2 id="local-title">주민등록 인구 대비 치과기관 수 상위 10곳</h2><ol id="local-ranking"></ol></aside></section>
+<section class="events" data-panel="events" hidden aria-labelledby="events-title"><div class="events-head"><h2 id="events-title">지역별 신규개원 · 폐업</h2><span id="events-period" class="events-period">개·폐업 이력을 불러오는 중입니다.</span></div><div id="event-totals" class="event-totals"></div><div class="event-lists"><div class="event-list opening"><h3>신규개원 상위 지역</h3><ol id="opening-ranking"></ol></div><div class="event-list closure"><h3>폐업 상위 지역</h3><ol id="closure-ranking"></ol></div></div></section>
+<details id="data-notes" style="margin-top:24px;border-top:1px solid var(--line);padding-top:16px;color:var(--muted);font-size:13px;line-height:1.7"><summary style="cursor:pointer;font-weight:600">데이터 안내 · 집계 기준 및 출처</summary>
+<div data-panel="specialty" hidden><p id="specialty-note" style="width:100%;margin:0;font-size:14px;line-height:1.6" aria-live="polite">과목을 선택하면 시군구·읍면동별 전문의 수를 볼 수 있습니다.</p></div>
+<div data-panel="events" hidden><span class="note" data-panel="events" hidden>신규개원·폐업은 최근 12개월 시군구별 발생 건수입니다.</span><p id="event-note" style="width:100%;margin:0;font-size:14px;line-height:1.6" aria-live="polite">연도 선택은 개업·폐업 지도와 아래 순위에 적용됩니다. 기관·인력 지도는 2026년 6월 기준입니다.</p><p id="recovery-summary">API 집계 기준을 불러오는 중입니다.</p><p>신규개원은 인허가일, 폐업은 폐업 상태와 폐업일을 기준으로 집계합니다. 날짜·상태가 충돌하거나 종별이 불명확한 기록은 보류합니다. 심평원·서울시 개폐업 건수를 합산하지 않습니다.</p><p>읍면동은 API 기재 주소의 위치를 현재 배포 경계에 배정한 결과입니다. 좌표가 없을 때 이름·종별·주소가 정확히 일치하는 보유 심평원 좌표만 보완합니다. 좌표 충돌·경계 50m 이내·위치 미확인 기록은 읍면동에서 보류하고 전체 건수에는 포함합니다. 지도에 배정된 기록이 없다는 것은 실제 개폐업이 없었다는 뜻이 아닙니다.</p><p>자료: <a href="https://www.data.go.kr/data/15154874/openapi.do" target="_blank" rel="noopener">행정안전부 의원 API</a> · <a href="https://www.data.go.kr/data/15154458/openapi.do" target="_blank" rel="noopener">병원 API</a> · <a href="/data/api-yearly-events.json" download>연도별 지도 집계 내려받기 (JSON)</a></p></div>
+<footer id="foot">분석 대상은 치과의원·일반 치과병원이며, 대학·치과대학 부속 치과병원은 제외합니다. 인구: <a href="https://jumin.mois.go.kr/" target="_blank">행정안전부 주민등록 인구통계</a> 2026년 6월. 기관·인력: 건강보험심사평가원 전국 병의원 및 약국 현황 2026년 6월.</footer>
+<p id="facility-note" data-panel="facilities"></p>
+</details>
+</main><script>
+
+let FH=null,facilityYear=2026,facilityScale='count',facilityDrag=null,facilityFrame=null,facilityPending=null;
+const isFacilityHistory=()=>S.metric==='dentalFacilities'&&!!FH;
+const facilitySnapshot=()=>FH?.years[facilityYear];
+const facilityDateLabel=()=>{const date=facilitySnapshot()?.asOf;return date?date.slice(0,4)+'년 '+Number(date.slice(5,7))+'월':'2026년 6월'};
+const facilityValue=p=>facilitySnapshot()?.[String(p.code).length===5?'district':'local']?.[p.code]??0;
+function renderFacilityHistory(){
+if(!FH)return;
+document.querySelector('#facility-selection').textContent=facilityDateLabel()+' 현황';
+document.querySelectorAll('[data-facility-year]').forEach(b=>b.setAttribute('aria-pressed',Number(b.dataset.facilityYear)===facilityYear));
+const years=Object.keys(FH.years).map(Number);
+document.querySelector('#facility-prev').disabled=facilityYear===Math.min(...years);
+document.querySelector('#facility-next').disabled=facilityYear===Math.max(...years);
+const d=facilitySnapshot();
+document.querySelector('#facility-note').textContent=FH.notes+' '+facilityDateLabel()+' 전체 '+nf(d.total)+'곳, 시군구 연결 '+nf(d.coverage.district)+'곳, 읍면동 연결 '+nf(d.coverage.local)+'곳. 위치 미연결 기관은 지역 집계에서 제외합니다.';
+document.querySelector('#facility-rate-note').hidden=facilityScale!=='rate';
+}
+function selectFacilityYear(value){
+if(!FH?.years[value])return;
+facilityYear=Number(value);renderFacilityHistory();redraw(true);
+}
+function cancelFacilityFrame(){if(facilityFrame!==null)cancelAnimationFrame(facilityFrame);facilityFrame=null;facilityPending=null}
+function queueFacilityYear(value){
+facilityPending=value;if(facilityFrame!==null)return;
+facilityFrame=requestAnimationFrame(()=>{facilityFrame=null;const target=facilityPending;facilityPending=null;if(target!==facilityYear)selectFacilityYear(target)});
+}
+function setupFacilityChart(){
+const chart=document.querySelector('#facility-trend'),entries=Object.entries(FH.years),max=Math.max(...entries.map(([,d])=>d.total));
+chart.innerHTML=entries.map(([year,d])=>'<button class="trend-year" data-facility-year="'+year+'" aria-pressed="false" title="'+d.asOf+' · '+nf(d.total)+'곳"><span class="facility-chart-total">'+nf(d.total)+'곳</span><span class="trend-bar" style="height:'+d.total/max*65+'px;background:#0b5277"></span><small>'+year+(d.asOf.slice(5,7)==='12'?'년 말':'년 '+Number(d.asOf.slice(5,7))+'월')+'</small></button>').join('');
+const atX=x=>{const buttons=[...chart.querySelectorAll('[data-facility-year]')];return +buttons.reduce((a,b)=>Math.abs(b.getBoundingClientRect().x+b.getBoundingClientRect().width/2-x)<Math.abs(a.getBoundingClientRect().x+a.getBoundingClientRect().width/2-x)?b:a).dataset.facilityYear};
+chart.onpointerdown=e=>{if(e.button!==0)return;const b=e.target.closest('[data-facility-year]');if(!b)return;facilityDrag={id:e.pointerId,last:+b.dataset.facilityYear};chart.setPointerCapture(e.pointerId);selectFacilityYear(facilityDrag.last)};
+chart.onpointermove=e=>{if(!facilityDrag||facilityDrag.id!==e.pointerId)return;facilityDrag.last=atX(e.clientX);queueFacilityYear(facilityDrag.last)};
+chart.onpointerup=e=>{if(!facilityDrag||facilityDrag.id!==e.pointerId)return;const value=facilityDrag.last;facilityDrag=null;cancelFacilityFrame();chart.releasePointerCapture(e.pointerId);selectFacilityYear(value)};
+chart.onpointercancel=()=>{facilityDrag=null;cancelFacilityFrame()};
+chart.onclick=e=>{const b=e.target.closest('[data-facility-year]');if(b&&e.detail===0)selectFacilityYear(+b.dataset.facilityYear)};
+for(const [id,delta] of [['facility-prev',-1],['facility-next',1]])document.querySelector('#'+id).onclick=()=>{const years=entries.map(([y])=>+y);selectFacilityYear(years[years.indexOf(facilityYear)+delta])};
+document.querySelector('#facility-scale').onchange=e=>{facilityScale=e.target.value;renderFacilityHistory();redraw()};
+document.querySelector('#facility-scale').disabled=false;
+document.querySelector('#facility-help').textContent='연도를 클릭하거나 드래그하세요. 2023–2025년은 연말, 2026년은 6월 현황입니다.';
+renderFacilityHistory();
+}
+
+const S={metric:'dentalFacilities',eventKind:'net',denom:'resident',specialty:'__TOTAL__',specialtyScale:'count'},M={net:['개원 − 폐업 순증감','곳',null],specialty:['전체 과목 전문의 수 (복수자격 포함)','명',null],dentalFacilities:['치과기관 수','곳','orthodonticFacilities'],dentalDentists:['치과의사 수','명','orthodonticDentists'],openings:['신규개원','곳',null],closures:['폐업','곳',null]},nf=n=>new Intl.NumberFormat('ko-KR').format(n||0),key=s=>(s||'').replace(/\s+/g,''),isEvent=()=>['openings','closures','net'].includes(S.metric),isSpecialty=()=>S.metric==='specialty',isCount=()=>isEvent()||(isFacilityHistory()&&facilityScale==='count')||(isSpecialty()&&S.specialtyScale==='count'),v=p=>isFacilityHistory()?facilityValue(p):S.metric==='net'?(p.openings||0)-(p.closures||0):isSpecialty()?(p.specialties?.counts?.[S.specialty]||0):(p[S.metric]||0),base=p=>S.denom==='daytime'?p.daytimePopulation:p.population,dname=()=>S.denom==='daytime'?'주간인구 (2020)':'주민등록 인구',rate=p=>isCount()?v(p):(base(p)?v(p)/base(p)*1e4:null),polys=g=>g.type==='Polygon'?[g.coordinates]:g.coordinates,coords=g=>polys(g).flatMap(x=>x.flat());
+
+const signed=n=>n>0?'+'+nf(n):n<0?'−'+nf(-n):'0';
+const COLOR_MIN=0,scaleMax=F=>{let values=F.map(f=>S.metric==='net'?Math.abs(rate(f.properties)):rate(f.properties)).filter(x=>x!=null&&x>0).sort((a,b)=>a-b);if(!values.length)return 1;let value=values[Math.floor((values.length-1)*(isEvent()?.95:.9))];return value>=10?Math.ceil(value):Math.ceil(value*2)/2},paint=(x,max)=>{if(x===0)return '#ffffff';if(S.metric==='net'){const t=Math.min(1,Math.abs(x)/max),a=[255,255,255],b=x<0?[181,43,43]:[17,112,54];return 'rgb('+a.map((v,i)=>Math.round(v+(b[i]-v)*t)).join(',')+')'}let t=Math.max(0,Math.min(1,(x-COLOR_MIN)/(max-COLOR_MIN)))*2,i=Math.min(1,Math.floor(t)),stops=isEvent()?(S.metric==='openings'?[[255,255,255],[89,190,120],[17,112,54]]:[[255,255,255],[238,127,127],[181,43,43]]):[[255,255,255],[79,174,195],[7,61,98]],a=stops[i],b=stops[i+1];
+return'rgb('+a.map((n,j)=>Math.round(n+(b[j]-n)*(t-i))).join(',')+')'},mc=n=>({서울1호선:'#0052a4',서울2호선:'#00a84d',서울3호선:'#ef7c1c',서울4호선:'#00a5de',서울5호선:'#996cac',서울6호선:'#cd7c2f',서울7호선:'#747f00',서울8호선:'#e6186c',서울9호선:'#bb8336',부산1호선:'#f06a00',부산2호선:'#7ac143',부산3호선:'#bb8cce',부산4호선:'#1d9bb7',대구1호선:'#d93a46',대구2호선:'#00a54f',대구3호선:'#f5a900',대전1호선:'#007448',광주1호선:'#009088',인천1호선:'#7ca8d6',인천2호선:'#f06a2e',부산김해경전철:'#7c5db6',경강선:'#003da5',경의중앙선:'#77c4a3',경춘선:'#00a4e3',공항철도:'#0090d8',김포골드라인:'#a17800',서해선:'#8fc31f',수인분당선:'#f5c700',신분당선:'#d4003b',용인에버라인:'#6fb245',우이신설선:'#b7c452',의정부경전철:'#f58b39'}[n]||'#586b78');
+
+
+const escapeHTML=value=>String(value??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+function regionInfo(el,F,state){
+const level=el.id==='local-map'?'local':'district',aside=document.querySelector('#'+level+' aside');
+let card=aside.querySelector('.region-info');
+if(!card){card=document.createElement('section');card.className='region-info';card.setAttribute('aria-label','선택 지역 정보');card.setAttribute('aria-live','polite');aside.prepend(card)}
+const f=F.find(f=>String(f.properties.code)===state.selected);
+if(!f){card.innerHTML='<h2>지역 정보</h2><p>지도에서 행정구역을 클릭하면<br>해당 지역의 현황을 볼 수 있습니다.</p>';return}
+const p=f.properties,fullName=level==='district'?((Object.entries(SIDO_PREFIX).find(([,code])=>String(p.code).startsWith(code))||[])[0]||'')+' '+p.name:p.name;
+const row=(label,value)=>'<div><dt>'+escapeHTML(label)+'</dt><dd>'+escapeHTML(value)+'</dd></div>';
+const number=(value,unit)=>value==null?'자료 없음':nf(value)+unit;
+const per=(value,pop)=>value==null||!pop?'산출 불가':(value/pop*1e4).toFixed(2)+M[S.metric][1];
+let rows='';
+if(isEvent()){
+rows+=row('신규개원','+'+nf(p.openings)+'곳')+row('폐업','−'+nf(p.closures)+'곳')+row('순증감',signed((p.openings||0)-(p.closures||0))+'곳');
+}else if(isFacilityHistory()){
+rows+=row('치과기관 ('+facilityDateLabel()+')',nf(v(p))+'곳')+row('주민등록 인구 1만 명당',per(v(p),p.population));
+if(level==='district')rows+=row('주간인구 1만 명당',per(v(p),p.daytimePopulation));
+}else{
+rows+=row('치과기관',number(p.dentalFacilities,'곳'))+row('치과의사',number(p.dentalDentists,'명'));
+if(SP&&p.specialties)rows+=row('전문자격 합계 (중복 포함)',nf(p.specialties.counts.__TOTAL__)+'명')+row('통합치의학과 제외',nf(p.specialties.counts.__WITHOUT_GENERAL__)+'명');
+rows+=row('주민등록 인구 1만 명당',per(v(p),p.population));
+if(level==='district')rows+=row('주간인구 1만 명당',per(v(p),p.daytimePopulation));
+}
+rows+=row(isFacilityHistory()?'주민등록 인구 (2026.6)':'주민등록 인구',number(p.population,'명'));
+if(level==='district')rows+=row('주간인구 (2020)',number(p.daytimePopulation,'명'));
+const selectedValue=rate(p),headline=isEvent()?(S.metric==='net'?signed(v(p)):nf(v(p)))+'곳':isCount()?nf(v(p))+M[S.metric][1]:selectedValue==null?'산출 불가':selectedValue.toFixed(2)+M[S.metric][1];
+card.innerHTML='<div class="region-heading"><h2>'+escapeHTML(fullName.trim())+'</h2><button type="button" aria-label="지역 선택 해제">×</button></div><p class="region-period">'+escapeHTML(isEvent()?periodLabel()+' · 지도 연결 기록':isFacilityHistory()?facilityDateLabel()+' 현황':'2026년 6월 기관 목록 기준')+'</p><div class="region-primary"><span>'+escapeHTML((isCount()?'':'인구 1만 명당 · ')+M[S.metric][0])+'</span><strong>'+headline+'</strong></div><dl>'+rows+'</dl>'+
+(isSpecialty()&&SP?'<details class="region-specialties"><summary>과목별 전문의 수</summary><dl>'+SP.specialties.map(s=>row(s,nf(p.specialties?.counts?.[s]||0)+'명')).join('')+'</dl></details>':'')+
+'<p class="region-footnote">'+(isEvent()?'선택 기간에 이 지역으로 연결된 기록입니다. 미배정 기록은 포함하지 않습니다.':isFacilityHistory()?'개원가 기준. 현재 배포 경계에 연결한 현황이며, 인구 대비 값은 당시 인구가 아닌 고정 인구 기준입니다.':'개원가 기준입니다. 전문자격 합계는 복수자격을 중복 포함하며 고유 인원수가 아닙니다.')+'</p>';
+card.querySelector('button').onclick=()=>{state.selected=null;el.querySelector('.selection-outline')?.remove();el.querySelectorAll('.area[aria-pressed="true"]').forEach(p=>p.setAttribute('aria-pressed','false'));regionInfo(el,F,state)};
+}
+
+function draw(el,F,C=[],state){el.replaceChildren();
+regionInfo(el,F,state);
+let tip=document.createElement('div');
+tip.className='tooltip';
+el.append(tip);
+let svg=document.createElementNS('http://www.w3.org/2000/svg','svg'),W=1200,H=1000;
+svg.setAttribute('viewBox','0 0 '+W+' '+H);
+el.append(svg);
+let view=document.createElementNS(svg.namespaceURI,'g'),ar=document.createElementNS(svg.namespaceURI,'g'),ct=document.createElementNS(svg.namespaceURI,'g');
+let selection=document.createElementNS(svg.namespaceURI,'g');
+view.append(ar,ct,selection);
+function selectArea(code){state.selected=code;highlight();regionInfo(el,F,state)}
+function highlight(){selection.replaceChildren();ar.querySelectorAll('.area').forEach(e=>{const active=e.dataset.code===state.selected;e.setAttribute('aria-pressed',active);if(active){const outline=document.createElementNS(svg.namespaceURI,'path');outline.setAttribute('d',e.getAttribute('d'));outline.setAttribute('class','selection-outline');selection.append(outline)}})}
+svg.append(view);
+let q=F.flatMap(f=>polys(f.geometry).flat(2)),x0=Infinity,x1=-Infinity,y0=Infinity,y1=-Infinity;
+q.forEach(([x,y])=>{x0=Math.min(x0,x);
+x1=Math.max(x1,x);
+y0=Math.min(y0,y);
+y1=Math.max(y1,y)});
+let c=Math.cos(36.5*Math.PI/180),sc=Math.min((W-80)/((x1-x0)*c),(H-80)/(y1-y0)),ox=(W-(x1-x0)*c*sc)/2-x0*c*sc,oy=(H-(y1-y0)*sc)/2+y1*sc,pr=([x,y])=>[x*c*sc+ox,-y*sc+oy],path=g=>polys(g).map(p=>p.map(r=>r.map((q,i)=>(i?'L':'M')+pr(q).join(' ')).join(' ')+'Z').join(' ')).join(' '),max=scaleMax(F);
+F.forEach(f=>{let p=f.properties,e=document.createElementNS(svg.namespaceURI,'path');
+e.setAttribute('d',path(f.geometry));
+e.setAttribute('class','area');
+e.dataset.code=String(p.code);e.setAttribute('role','button');e.setAttribute('tabindex','0');e.setAttribute('aria-label',p.name+' 지역 정보');
+e.onkeydown=q=>{if(q.key==='Enter'||q.key===' '){q.preventDefault();selectArea(String(p.code))}};
+e.setAttribute('fill',rate(p)==null?'#c8d8de':paint(rate(p),max));
+e.onmousemove=q=>{if(drag)return;
+let r=el.getBoundingClientRect(),z=rate(p);
+tip.innerHTML='<strong>'+p.name+'</strong><br>'+(S.metric==='net'?'개원 <b>+'+nf(p.openings||0)+'</b> · 폐업 <b>−'+nf(p.closures||0)+'</b><br>순증감 <b>'+signed(v(p))+'곳</b>':isCount()?M[S.metric][0]+' <b>'+nf(v(p))+M[S.metric][1]+'</b>':('인구 1만 명당 <b>'+(z==null?'–':z.toFixed(2)+M[S.metric][1])+'</b><br>'+M[S.metric][0]+' '+nf(v(p))+M[S.metric][1]+' · '+dname()+' '+nf(base(p))+'명'));
+tip.style.left=q.clientX-r.left+'px';
+tip.style.top=q.clientY-r.top+'px';
+tip.classList.add('on')};
+e.onmouseleave=()=>tip.classList.remove('on');
+ar.append(e)});
+C.forEach(f=>{let e=document.createElementNS(svg.namespaceURI,'path');
+e.setAttribute('d',path(f.geometry));
+e.setAttribute('class','context');
+ct.append(e)});
+if(S.metro&&T)T.features.forEach(f=>{let ls=f.geometry.type==='LineString'?[f.geometry.coordinates]:f.geometry.coordinates;
+ls.forEach(l=>{let e=document.createElementNS(svg.namespaceURI,'path');
+e.setAttribute('d',l.map((q,i)=>(i?'L':'M')+pr(q).join(' ')).join(' '));
+e.setAttribute('fill','none');
+e.setAttribute('stroke',mc(f.properties.lineId));
+e.setAttribute('class','metro-line');
+e.setAttribute('stroke-width','1.5');
+e.setAttribute('vector-effect','non-scaling-stroke');
+e.setAttribute('stroke-linecap','round');
+e.setAttribute('pointer-events','none');
+ct.append(e)})});
+let z=state?.z??1,px=state?.px??0,py=state?.py??0,drag=false,id,last,startPoint,pressedCode,moved=false,zoomLabel,apply=s=>{if(state){state.z=z;state.px=px;state.py=py}if(zoomLabel)zoomLabel.textContent=z.toFixed(1)+'×';view.style.transition=s?'transform 120ms cubic-bezier(.2,.75,.3,1)':'none';
+view.style.setProperty('--boundary-scale',1/Math.sqrt(z));
+view.setAttribute('transform','translate('+(W/2+px)+' '+(H/2+py)+') scale('+z+') translate('+(-W/2)+' '+(-H/2)+')')},pt=e=>{let p=svg.createSVGPoint();
+p.x=e.clientX;
+p.y=e.clientY;
+return p.matrixTransform(svg.getScreenCTM().inverse())},zoom=(n,f)=>{n=Math.max(1,Math.min(120,n));
+let x=f.x-W/2,y=f.y-H/2;
+px=x-n*(x-px)/z;
+py=y-n*(y-py)/z;
+z=n;
+apply(true)};
+svg.onpointerdown=e=>{if(e.button)return;
+id=e.pointerId;
+last=pt(e);startPoint={x:e.clientX,y:e.clientY};pressedCode=e.target.closest('.area')?.dataset.code;moved=false;
+drag=true;
+svg.setPointerCapture(id);
+svg.classList.add('drag');
+tip.classList.remove('on')};
+svg.onpointermove=e=>{if(e.pointerId!==id)return;
+let n=pt(e);
+if(Math.hypot(e.clientX-startPoint.x,e.clientY-startPoint.y)>5)moved=true;
+px+=n.x-last.x;
+py+=n.y-last.y;
+last=n;
+apply()};
+let end=e=>{if(e.pointerId===id){if(e.type==='pointerup'&&!moved&&pressedCode)selectArea(pressedCode);id=null;
+drag=false;
+if(svg.hasPointerCapture(e.pointerId))svg.releasePointerCapture(e.pointerId);
+svg.classList.remove('drag')}};
+svg.onpointerup=end;
+svg.onpointercancel=end;
+svg.addEventListener('wheel',e=>{e.preventDefault();
+zoom(z*Math.exp(-e.deltaY*.0015),pt(e))},{passive:false});
+let cc=document.createElement('div');
+cc.className='zoom';
+cc.innerHTML='<button aria-label="지도 확대">+</button><button aria-label="지도 축소">−</button><button aria-label="지도 초기화">↺</button><span class="zoom-level" aria-label="확대 배율"></span>';
+zoomLabel=cc.querySelector('.zoom-level');
+cc.children[0].onclick=()=>zoom(z*1.25,{x:W/2,y:H/2});
+cc.children[1].onclick=()=>zoom(z/1.25,{x:W/2,y:H/2});
+cc.children[2].onclick=()=>{z=1;
+px=py=0;
+apply(true)};
+el.append(cc);
+let l=document.createElement('div');
+l.className='legend';
+paintLegend(l,max);
+el.append(l);highlight();apply()}
+function paintLegend(l,max){
+l.innerHTML='<b>'+(isEvent()?periodLabel()+' '+M[S.metric][0]+' (확인 기록)':isCount()?(isFacilityHistory()?facilityDateLabel()+' ':'')+M[S.metric][0]+' ('+M[S.metric][1]+')':'인구 1만 명당 '+M[S.metric][0])+'</b><div class="scale"></div><div class="lr"><span>'+COLOR_MIN+'</span><span>'+max+' 이상</span></div>';
+if(S.metric==='net'){l.innerHTML='<b>'+periodLabel()+' 순증감 (개원 − 폐업)</b><div class="scale" style="background:linear-gradient(90deg,#b52b2b,#ffffff,#117036)"></div><div class="lr"><span>−'+max+' 이하</span><span>0</span><span>+'+max+' 이상</span></div>'}else if(isEvent())l.querySelector('.scale').style.background=S.metric==='openings'?'linear-gradient(90deg,rgb(255,255,255),rgb(89,190,120),rgb(17,112,54))':'linear-gradient(90deg,rgb(255,255,255),rgb(238,127,127),rgb(181,43,43))';
+}
+function refreshMap(el,F,C,state){
+const areas=el.querySelectorAll('.area');
+if(areas.length!==F.length){draw(el,F,C,state);return}
+const max=scaleMax(F);
+areas.forEach((area,i)=>{const value=rate(F[i].properties);area.setAttribute('fill',value==null?'#c8d8de':paint(value,max))});
+el.querySelector('.tooltip')?.classList.remove('on');
+paintLegend(el.querySelector('.legend'),max);
+regionInfo(el,F,state);
+}
+function panel(k,F,s){let p=F.reduce((x,f)=>x+(base(f.properties)||0),0),n=F.reduce((x,f)=>x+v(f.properties),0),u=M[S.metric];
+if(S.metric==='net'){
+const active=F.filter(f=>(f.properties.openings||0)+(f.properties.closures||0)>0),ranked=[...active].sort((a,b)=>Math.abs(v(b.properties))-Math.abs(v(a.properties)));
+document.querySelector('#'+k+'-count').textContent=nf(active.length)+s;
+document.querySelector('#'+k+'-label').textContent=periodLabel()+' 순증감 · 지도 연결분';
+document.querySelector('#'+k+'-total').textContent=signed(n)+'곳';
+document.querySelector('#'+k+'-rate-label').textContent='개원 / 폐업 · 지도 연결분';
+document.querySelector('#'+k+'-rate').textContent='+'+nf(F.reduce((n,f)=>n+(f.properties.openings||0),0))+' / −'+nf(F.reduce((n,f)=>n+(f.properties.closures||0),0))+'곳';
+document.querySelector('#'+k+'-title').textContent='순증감 규모 상위 10곳';
+document.querySelector('#'+k+'-ranking').innerHTML=ranked.slice(0,10).map((f,i)=>'<li><span class="rank">'+(i+1)+'</span><span>'+f.properties.name+'</span><b>'+signed(v(f.properties))+'곳</b></li>').join('');return}
+if(isCount()){let active=F.filter(f=>v(f.properties)>0),top=active.sort((a,b)=>v(b.properties)-v(a.properties))[0];
+document.querySelector('#'+k+'-count').textContent=nf(active.length)+s;
+document.querySelector('#'+k+'-label').textContent=(isEvent()?periodLabel()+' ':isFacilityHistory()?facilityDateLabel()+' ':'')+u[0]+' · 지도 연결분';
+document.querySelector('#'+k+'-total').textContent=nf(n)+u[1];
+document.querySelector('#'+k+'-rate-label').textContent=isEvent()?'최다 발생 지역':isFacilityHistory()?'치과기관 수 최다 지역':'전문의 수 최다 지역';
+document.querySelector('#'+k+'-rate').textContent=top?top.properties.name+' '+nf(v(top.properties))+u[1]:'–';
+document.querySelector('#'+k+'-title').textContent=(isEvent()?periodLabel()+' ':isFacilityHistory()?facilityDateLabel()+' ':'')+u[0]+' 상위 10곳';
+document.querySelector('#'+k+'-ranking').innerHTML=active.slice(0,10).map((f,i)=>'<li><span class="rank">'+(i+1)+'</span><span>'+f.properties.name+'</span><b>'+nf(v(f.properties))+u[1]+'</b></li>').join('');
+return}
+document.querySelector('#'+k+'-count').textContent=nf(F.length)+s;
+document.querySelector('#'+k+'-label').textContent=u[0]+' 합계';
+document.querySelector('#'+k+'-total').textContent=nf(n)+u[1];
+document.querySelector('#'+k+'-rate-label').textContent='전국 평균 · '+dname()+' 1만 명당';
+document.querySelector('#'+k+'-rate').textContent=p?(n/p*1e4).toFixed(2)+u[1]:'–';
+document.querySelector('#'+k+'-title').textContent=dname()+' 대비 '+u[0]+' 상위 10곳';
+document.querySelector('#'+k+'-ranking').innerHTML=F.filter(f=>rate(f.properties)!=null).sort((a,b)=>rate(b.properties)-rate(a.properties)).slice(0,10).map((f,i)=>'<li><span class="rank">'+(i+1)+'</span><span>'+f.properties.name+'</span><b>'+rate(f.properties).toFixed(2)+u[1]+'</b></li>').join('')}
+function eventPanel(d){let p=d.period,start=p.start.slice(0,7).replace('-','년 ')+'월',end=p.end.slice(0,7).replace('-','년 ')+'월',rank=(type,target)=>document.querySelector(target).innerHTML=d.regions.filter(x=>x[type]).sort((a,b)=>b[type]-a[type]||a.name.localeCompare(b.name,'ko')).slice(0,10).map(x=>'<li><span>'+x.name+'</span><b>'+nf(x[type])+'곳</b></li>').join('');
+document.querySelector('#events-period').textContent=start+' ~ '+end+' 기준';
+document.querySelector('.event-list.opening').hidden=S.metric==='closures';document.querySelector('.event-list.closure').hidden=S.metric==='openings';
+document.querySelector('#event-totals').innerHTML=(S.metric!=='closures'?'<span class="event-total opening">개원 +'+nf(d.totals.openings)+'곳</span>':'')+(S.metric!=='openings'?'<span class="event-total closure">폐업 −'+nf(d.totals.closures)+'곳</span>':'')+(S.metric==='net'?'<span class="event-total">순증감 '+signed(d.totals.openings-d.totals.closures)+'곳</span>':'');
+rank('openings','#opening-ranking');rank('closures','#closure-ranking')}
+let D,L,T,E,O,Y,SP,year=2025,yearEnd=2025,eventError=false,localLoad,V={district:{z:1,px:0,py:0},local:{z:1,px:0,py:0}};
+function applySpecialties(){if(!SP)return;for(let [features,level] of [[D,'district'],[L,'local']])if(features)features.forEach(f=>{let p=SP[level][f.properties.code]||{counts:{},orthodontic:{}};for(let field of ['counts','orthodontic']){p[field].__TOTAL__=SP.specialties.reduce((n,s)=>n+(p[field][s]||0),0);p[field].__WITHOUT_GENERAL__=p[field].__TOTAL__-(p[field]['통합치의학과']||0);}f.properties.specialties=p})}
+fetch('/data/specialties.json').then(r=>{if(!r.ok)throw Error('과목 데이터 요청 실패');return r.json()}).then(d=>{SP=d;applySpecialties();let select=document.querySelector('#specialty');select.innerHTML='<option value="__TOTAL__">전체 과목 합계 (복수자격 포함)</option><option value="__WITHOUT_GENERAL__">전체 과목 합계 (통합치의학과 제외)</option>'+d.specialties.map(s=>'<option>'+s+'</option>').join('');select.disabled=false;document.querySelector('[data-metric="specialty"]').disabled=false;document.querySelector('#specialty-note').textContent='과목별 집계는 개원가 치과의원·일반 치과병원 기준입니다. 기관명 기준으로 대학·부속치과, 군 의료기관, 장애인치과병원, 교정시설 등을 제외합니다. 2026년 6월 기관 목록에 심평원 상세페이지 수집 당시 인원을 연결했습니다. 전체 과목 합계는 11개 과목의 합산값이며, 통합치의학과 제외 합계는 나머지 10개 과목의 합산값입니다. 두 합계 모두 복수 전문자격을 중복 포함하므로 고유 인원수가 아닙니다. 인구 1만 명당 표시에서는 상단 비교 기준으로 주민등록·주간인구를 선택합니다. 주간인구는 시군구 자료이므로 선택 시 시군구 지도로 전환됩니다. 원문 미확인 '+nf(d.coverage.unverifiedFacilities)+'개 기관 제외 · 위치 미연결: 시군구 '+nf(d.coverage.districtUnmatched)+'곳, 읍면동 '+nf(d.coverage.localUnmatched)+'곳.';redraw()}).catch(()=>{document.querySelector('#specialty').innerHTML='<option value="">불러오기 실패</option>';document.querySelector('#specialty-note').textContent='과목별 전문의 데이터를 불러오지 못했습니다. 새로고침해 주세요.'});
+document.querySelector('#specialty').onchange=e=>{S.specialty=e.target.value;S.metric='specialty';M.specialty[0]=S.specialty==='__TOTAL__'?'전체 과목 전문의 수 (복수자격 포함)':S.specialty==='__WITHOUT_GENERAL__'?'전문의 합계 (통합치의학과 제외·복수자격 포함)':S.specialty+' 전문의 수';redraw()};
+document.querySelector('#specialty-scale').onchange=e=>{S.specialtyScale=e.target.value;redraw()};
+const SIDO_PREFIX={서울:'11',부산:'21',대구:'22',인천:'23',광주:'24',대전:'25',울산:'26',세종시:'29',경기:'31',강원:'32',충북:'33',충남:'34',전북:'35',전남:'36',경북:'37',경남:'38',제주:'39'};
+function eventKey(name){return key(name).replace(/시(?=[가-힣]+구$)/,'')}
+function applyEvents(){if(!D||!E)return;
+D.forEach(f=>{let n=E.districts[f.properties.code];f.properties.openings=n?.openings||0;f.properties.closures=n?.closures||0})}
+function applyLocalOpenings(){if(!L||!O)return;
+L.forEach(f=>{f.properties.openings=O.openingsByCode[f.properties.code]||0;f.properties.closures=O.closuresByCode?.[f.properties.code]||0});
+}
+function eventLabels(){renderTrend();renderFacilityHistory();
+document.querySelectorAll('[data-panel="facilities"]').forEach(el=>el.hidden=S.metric!=='dentalFacilities');if(isEvent()&&E)eventPanel(E);let local=!document.querySelector('#local').hidden;
+let specialtyVisible=isSpecialty();
+document.querySelectorAll('[data-panel="dental"]').forEach(el=>el.hidden=isEvent());
+document.querySelectorAll('[data-section]').forEach(b=>b.setAttribute('aria-pressed',b.dataset.section===(isEvent()?'events':'dental')));
+document.querySelectorAll('[data-panel="specialty"]').forEach(el=>el.hidden=!specialtyVisible);
+document.querySelectorAll('[data-panel="events"]').forEach(el=>el.hidden=!isEvent());
+document.querySelectorAll('[data-metric]').forEach(b=>b.setAttribute('aria-pressed',b.dataset.metric===S.metric));
+document.querySelectorAll('[data-event-kind]').forEach(b=>b.setAttribute('aria-pressed',b.dataset.eventKind===S.metric));
+document.querySelector('#specialty').value=isSpecialty()?S.specialty:'';
+document.querySelector('#specialty-scale').disabled=!isSpecialty();
+if(!isEvent())document.querySelector('#subtitle').textContent=(local?'읍면동':'시군구')+'별 '+(isCount()?'':dname()+' 대비 ')+M[S.metric][0];
+document.querySelector('.note').textContent='개업·폐업은 선택 연도의 확인 기록 건수이며, 인구 대비 값이 아닙니다.';
+document.querySelector('.asof').textContent=isEvent()?periodLabel()+' 개업·폐업':isFacilityHistory()?facilityDateLabel()+' 기준':'2026년 6월 기준';
+document.querySelectorAll('[data-denom]').forEach(b=>b.disabled=isCount()||(b.dataset.denom==='daytime'&&(!b.dataset.ready)));
+if(isFacilityHistory())document.querySelector('#subtitle').textContent=(local?'읍면동':'시군구')+'별 '+facilityDateLabel()+' 치과기관 수'+(isCount()?'':' · '+dname()+' 고정 인구 대비');
+if(isEvent())document.querySelector('#subtitle').textContent=(local?'읍면동':'시군구')+'별 '+periodLabel()+' '+M[S.metric][0]+' 확인 기록';
+if(Y&&E){let c=E.coverage,t=E.totals;
+document.querySelector('#event-note').textContent=periodLabel()+' · 신규개원 전체 '+nf(t.openings)+'건 / 읍면동 연결 '+nf(c.localOpenings)+'건 / 미배정 '+nf(t.openings-c.localOpenings)+'건. 폐업 전체 '+nf(t.closures)+'건 / 읍면동 연결 '+nf(c.localClosures)+'건 / 미배정 '+nf(t.closures-c.localClosures)+'건. 시군구 연결: 신규개원 '+nf(c.districtOpenings)+'건, 폐업 '+nf(c.districtClosures)+'건. '+Y.notes.locations;
+document.querySelector('#recovery-summary').textContent=Y.source+' · 수집 '+Y.collectedAt+'. '+Y.notes.openings+' '+Y.notes.closures+' '+Y.notes.range}}
+function redraw(live=false){eventLabels();if(isEvent()&&!E){for(let k of ['district','local']){document.querySelector(k==='district'?'#map':'#local-map').textContent=eventError?'연도별 데이터를 불러오지 못했습니다. 새로고침해 주세요.':'연도별 데이터를 불러오는 중입니다.';for(let suffix of ['count','total','rate'])document.querySelector('#'+k+'-'+suffix).textContent='–';document.querySelector('#'+k+'-ranking').replaceChildren()}return}if(D){(live?refreshMap:draw)(document.querySelector('#map'),D,[],V.district);
+panel('district',D,'곳')}if(L){(live?refreshMap:draw)(document.querySelector('#local-map'),L,D||[],V.local);
+panel('local',L,'곳')}}function loadLocal(){if(localLoad)return localLoad;
+document.querySelector('#local-map').textContent='읍면동 지도 데이터를 불러오는 중입니다.';
+localLoad=fetch('/data/eupmyeondong-boundaries.json').then(r=>{if(!r.ok)throw Error('읍면동 경계 데이터 요청 실패');
+return r.json()}).then(d=>{L=d.features;
+applySpecialties();
+applyLocalOpenings();
+redraw()}).catch(()=>{document.querySelector('#local-map').textContent='읍면동 지도 데이터를 불러오지 못했습니다.'});
+return localLoad}function view(local){if(local&&S.denom==='daytime')S.denom='resident';
+let b=document.querySelector('[data-denom="daytime"]');
+b.disabled=!b.dataset.ready;
+document.querySelectorAll('[data-denom]').forEach(x=>x.setAttribute('aria-pressed',x.dataset.denom===S.denom));
+document.querySelector('#district').hidden=local;
+document.querySelector('#local').hidden=!local;
+document.querySelector('#subtitle').textContent=local?(S.metric==='openings'?'읍면동별 최근 12개월 신규개원 현황':'읍면동별 주민등록 인구 대비 치과 지표 분포'):(isEvent()?'시군구별 최근 12개월 '+M[S.metric][0]+' 현황':'시군구별 '+dname()+' 대비 치과 지표 분포');
+document.querySelectorAll('[data-view]').forEach(x=>x.setAttribute('aria-pressed',(x.dataset.view==='local')===local));
+if(local)loadLocal();
+redraw()}
+fetch('/data/district-boundaries.json').then(r=>{if(!r.ok)throw Error('시군구 경계 데이터 요청 실패');
+return r.json()}).then(d=>{D=d.features;
+applySpecialties();
+applyEvents();
+redraw();
+fetch('/data/daytime_population_2020.json').then(r=>r.ok?r.json():null).then(d=>{if(!d)return;
+let n=0;
+D.forEach(f=>{let r=d.districts[f.properties.code]||d.districts[key(f.properties.name)];
+if(r){f.properties.daytimePopulation=r.daytimePopulation;
+n++}});
+if(n>=200){let b=document.querySelector('[data-denom="daytime"]');
+b.disabled=isCount();
+b.dataset.ready='true';
+b.title='통계청 2020 인구주택총조사 통근·통학 기반 주간인구';
+document.querySelector('#foot').insertAdjacentText('beforeend',' 주간인구: 통계청 2020 인구주택총조사 표본(20%) 통근·통학.')}}).catch(()=>{});
+fetch('/data/transport-network.json').then(r=>r.ok?r.json():null).then(x=>{T=x;
+if(T)redraw()}).catch(()=>{})}).catch(()=>document.querySelector('#map').textContent='시군구 지도 데이터를 불러오지 못했습니다. 새로고침 후에도 계속되면 잠시 뒤 다시 시도해 주세요.');
+
+function aggregateYears(first,last){
+const out={period:{start:first+'-01-01',end:last+'-12-31'},totals:{openings:0,closures:0},districts:{},regions:[],openingsByCode:{},closuresByCode:{},coverage:{districtOpenings:0,districtClosures:0,localOpenings:0,localClosures:0}},regions={};
+for(let y=first;y<=last;y++){const d=Y.years[y];if(!d)continue;
+for(const k of ['openings','closures'])out.totals[k]+=d.totals[k]||0;
+for(const k of Object.keys(out.coverage))out.coverage[k]+=d.coverage[k]||0;
+for(const [code,p] of Object.entries(d.districts)){const q=out.districts[code]??={openings:0,closures:0};q.openings+=p.openings||0;q.closures+=p.closures||0}
+for(const k of ['openingsByCode','closuresByCode'])for(const [code,n] of Object.entries(d[k]||{}))out[k][code]=(out[k][code]||0)+n;
+for(const p of d.regions){const q=regions[p.name]??={name:p.name,openings:0,closures:0};q.openings+=p.openings||0;q.closures+=p.closures||0}}
+out.regions=Object.values(regions);return out}
+function periodLabel(){return year===yearEnd?year+'년':year+'–'+yearEnd+'년 누적'}
+function renderTrend(){
+if(!Y||!isEvent())return;
+if(chartDrag){previewChart(year,yearEnd);return}
+const entries=Object.entries(Y.years).sort((a,b)=>Number(a[0])-Number(b[0])),both=S.metric==='net';
+const max=Math.max(1,...entries.flatMap(([,d])=>both?[d.totals.openings,d.totals.closures]:[d.totals[S.metric]||0]));
+document.querySelector('#event-trend').innerHTML=entries.map(([y,d])=>{
+const selected=Number(y)>=year&&Number(y)<=yearEnd,op=d.totals.openings||0,cl=d.totals.closures||0,n=d.totals[S.metric]||0;
+const bars=both?'<span class="signed-trend"><span class="positive-half"><span style="height:'+Math.max(1,op/max*50)+'px"></span></span><span class="negative-half"><span style="height:'+Math.max(1,cl/max*50)+'px"></span></span></span>':'<span class="trend-bar" style="height:'+Math.max(2,n/max*70)+'px;background:'+(S.metric==='openings'?'#278552':'#c04e4e')+'"></span>';
+return '<button class="trend-year" aria-pressed="'+selected+'" data-year="'+y+'" title="'+y+'년 '+(both?'개원 +'+nf(op)+' / 폐업 −'+nf(cl)+' / 순증감 '+signed(op-cl):M[S.metric][0]+' '+nf(n))+'건">'+bars+'<small>'+y+'</small></button>'}).join('');
+document.querySelector('#trend-title').textContent=both?'연도별 개원(위 +) · 폐업(아래 −) · 지도는 순증감':'전국 연도별 '+M[S.metric][0]+' · 막대를 누르면 해당 연도 선택';
+chartHint();
+}
+let rangeAnchor=null,chartDrag=null,suppressChartClick=false,chartFrame=null,pendingChartPeriod=null;
+function cancelChartUpdate(){if(chartFrame!==null)cancelAnimationFrame(chartFrame);chartFrame=null;pendingChartPeriod=null}
+function queueChartPeriod(first,last){
+pendingChartPeriod=[first,last];
+if(chartFrame!==null)return;
+chartFrame=requestAnimationFrame(()=>{
+chartFrame=null;const period=pendingChartPeriod;pendingChartPeriod=null;
+if(!chartDrag||!period)return;
+const years=Object.keys(Y.years).map(Number),[a,b]=normalizePeriod(...period,Math.min(...years),Math.max(...years),windowYears());
+if(a!==year||b!==yearEnd)selectPeriod(a,b,true);
+});
+}
+function chartHint(){
+const mode=document.querySelector('#event-mode').value;
+document.querySelector('#chart-help').textContent=mode==='window'?'막대를 클릭하거나 드래그하면 고정 기간이 이동합니다.':mode==='single'?'조회할 연도를 클릭하거나 드래그하세요.':rangeAnchor===null?'시작 연도와 종료 연도를 차례로 클릭하거나, 원하는 구간을 드래그하세요.':rangeAnchor+'년 선택됨 · 종료 연도를 클릭하세요. (Esc: 취소)';
+}
+function previewChart(first,last){
+const years=Object.keys(Y.years).map(Number),[a,b]=normalizePeriod(first,last,Math.min(...years),Math.max(...years),windowYears());
+document.querySelectorAll('.trend-year').forEach(el=>el.setAttribute('aria-pressed',+el.dataset.year>=a&&+el.dataset.year<=b));
+document.querySelector('#event-selection').textContent=(a===b?a+'년':a+'–'+b+'년 누적')+(windowYears()?' · '+windowYears()+'년 창':'');
+}
+function chooseChartYear(value){
+if(document.querySelector('#event-mode').value==='range'){
+if(rangeAnchor===null){rangeAnchor=value;previewChart(value,value);chartHint();return}
+const start=Math.min(rangeAnchor,value),end=Math.max(rangeAnchor,value);rangeAnchor=null;selectPeriod(start,end);
+}else selectPeriod(value,value);
+}
+function setupChart(){
+const chart=document.querySelector('#event-trend');
+const atX=x=>{const buttons=[...chart.querySelectorAll('.trend-year')];return Number(buttons.reduce((best,b)=>Math.abs(b.getBoundingClientRect().x+b.getBoundingClientRect().width/2-x)<Math.abs(best.getBoundingClientRect().x+best.getBoundingClientRect().width/2-x)?b:best).dataset.year)};
+chart.onclick=e=>{if(suppressChartClick){suppressChartClick=false;return}const b=e.target.closest('[data-year]');if(b)chooseChartYear(+b.dataset.year)};
+chart.onpointerdown=e=>{if(e.button!==0)return;const b=e.target.closest('[data-year]');if(!b)return;suppressChartClick=false;chartDrag={id:e.pointerId,start:+b.dataset.year,last:+b.dataset.year,x:e.clientX,moved:false};chart.setPointerCapture(e.pointerId)};
+chart.onpointermove=e=>{if(!chartDrag||chartDrag.id!==e.pointerId)return;const target=atX(e.clientX);chartDrag.last=target;if(Math.abs(e.clientX-chartDrag.x)>5)chartDrag.moved=true;if(chartDrag.moved){const range=document.querySelector('#event-mode').value==='range';const first=range?Math.min(chartDrag.start,target):target,last=range?Math.max(chartDrag.start,target):target;previewChart(first,last);queueChartPeriod(first,last)}};
+chart.onpointerup=e=>{if(!chartDrag||chartDrag.id!==e.pointerId)return;const d=chartDrag;cancelChartUpdate();chartDrag=null;chart.releasePointerCapture(e.pointerId);if(d.moved){suppressChartClick=true;rangeAnchor=null;const range=document.querySelector('#event-mode').value==='range';selectPeriod(range?Math.min(d.start,d.last):d.last,range?Math.max(d.start,d.last):d.last,true)}else{chooseChartYear(d.start);suppressChartClick=true}};
+chart.onpointercancel=()=>{cancelChartUpdate();chartDrag=null;rangeAnchor=null;renderTrend();previewChart(year,yearEnd)};
+chart.onkeydown=e=>{if(e.key==='Escape'){rangeAnchor=null;renderTrend();document.querySelector('#event-selection').textContent=periodLabel()}};
+}
+
+let selectedWindowYears=3;
+function windowYears(){return document.querySelector('#event-mode').value==='window'?selectedWindowYears:0}
+function normalizePeriod(first,last,min,max,size=0){
+first=Math.round(Number(first));last=Math.round(Number(last));
+if(size){const start=Math.max(min,Math.min(max-size+1,first));return [start,start+size-1]}
+const start=Math.max(min,Math.min(max,first));return [start,Math.max(start,Math.min(max,last))]}
+function selectPeriod(first,last,live=false){
+if(!Y)return;const years=Object.keys(Y.years).map(Number),min=Math.min(...years),max=Math.max(...years),size=windowYears();
+[year,yearEnd]=normalizePeriod(first,last,min,max,size);
+document.querySelector('#event-selection').textContent=periodLabel()+(size?' · '+size+'년 창':'');
+document.querySelector('#window-hint').hidden=!size;
+document.querySelector('#window-options').hidden=!size;
+document.querySelectorAll('[data-window]').forEach(b=>b.setAttribute('aria-pressed',Number(b.dataset.window)===size));
+E=aggregateYears(year,yearEnd);O=E;applyEvents();applyLocalOpenings();redraw(live);
+document.querySelector('#event-prev').disabled=year===min;document.querySelector('#event-next').disabled=yearEnd===max;
+}
+function setupPeriods(){
+const years=Object.keys(Y.years).map(Number);
+setupChart();
+document.querySelector('#event-mode').disabled=false;
+document.querySelectorAll('[data-window]').forEach(b=>{b.disabled=false;b.onclick=()=>{rangeAnchor=null;selectedWindowYears=Number(b.dataset.window);document.querySelector('#event-mode').value='window';selectPeriod(year,yearEnd)}});
+document.querySelector('#event-mode').onchange=e=>{rangeAnchor=null;selectPeriod(year,e.target.value==='single'?year:yearEnd)};
+for(const [id,delta] of [['event-prev',-1],['event-next',1]])document.querySelector('#'+id).onclick=()=>{rangeAnchor=null;selectPeriod(year+delta,yearEnd+delta)};
+document.querySelector('#event-all').onclick=()=>{rangeAnchor=null;document.querySelector('#event-mode').value='range';selectPeriod(Math.min(...years),Math.max(...years))};
+selectPeriod(Y.defaultYear,Y.defaultYear);
+}
+
+fetch('/data/api-yearly-events.json?v=20260921-api1').then(r=>{if(!r.ok)throw Error('연도 자료 요청 실패');return r.json()}).then(d=>{Y=d;setupPeriods()}).catch(()=>{eventError=true;document.querySelector('#event-note').textContent='연도별 데이터를 불러오지 못했습니다. 새로고침해 주세요.';document.querySelector('#events-period').textContent='연도별 자료 불러오기 실패';redraw()});
+document.querySelector('#foot').insertAdjacentHTML('afterbegin','<span data-panel="events" hidden>개업·폐업 지도: 행안부 인허가 API의 치과의원·치과병원 확인 기록(대학·부속치과 포함), 2000~2025년. 신규개원은 인허가일, 폐업은 폐업일·상태 기준입니다. 위치는 API 기재 위치이며 과거 당시 위치를 보장하지 않습니다. </span><span data-panel="specialty" hidden>과목별 전문의 지도는 실제 인원수 또는 인구 1만 명당 값을 선택할 수 있으며 기존 인력 지도와 같은 기관명 제외 기준을 적용한 개원가 집계입니다. </span>');
+
+fetch('/data/facility-history.json').then(r=>{if(!r.ok)throw Error('현황 요청 실패');return r.json()}).then(d=>{FH=d;facilityYear=d.defaultYear;setupFacilityChart();redraw()}).catch(()=>{document.querySelector('#facility-help').textContent='연도별 현황을 불러오지 못했습니다. 새로고침해 주세요. 현재 지도는 2026년 6월 기준입니다.'});
+let dentalMetric='dentalFacilities';
+document.querySelectorAll('[data-section]').forEach(b=>b.onclick=()=>{S.metric=b.dataset.section==='events'?S.eventKind:dentalMetric;redraw()});
+document.querySelectorAll('[data-metric]').forEach(b=>b.onclick=()=>{dentalMetric=S.metric=b.dataset.metric;redraw()});
+document.querySelectorAll('[data-denom]').forEach(b=>b.onclick=()=>{if(b.disabled)return;
+S.denom=b.dataset.denom;
+if(S.denom==='daytime'&&!document.querySelector('#local').hidden)view(false);
+document.querySelectorAll('[data-denom]').forEach(x=>x.setAttribute('aria-pressed',x===b));
+document.querySelector('#subtitle').textContent='시군구별 '+dname()+' 대비 치과 지표 분포';
+redraw()});
+document.querySelector('#metro').onchange=e=>{S.metro=e.target.checked;
+redraw()};
+document.querySelectorAll('[data-event-kind]').forEach(b=>b.onclick=()=>{S.eventKind=S.metric=b.dataset.eventKind;redraw()});
+document.querySelectorAll('[data-view]').forEach(b=>b.onclick=()=>view(b.dataset.view==='local'));
+
+</script></body></html>

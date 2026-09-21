@@ -1,0 +1,5 @@
+# Only the public application is served. Archived source stays in Git, not Pages.
+exclude:
+  - _source
+  - scripts
+  - README.md
