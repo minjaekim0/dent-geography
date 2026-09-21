@@ -2,7 +2,7 @@
 <body><main>
 <header><div><h1>공식 주간인구 시계열 <span>카카오맵</span></h1><p>통근·통학 기반 인구총조사, 조사연도별 시군구 비교</p></div><nav><a href="./">치과 지도</a></nav></header>
 <section class="controls card"><fieldset id="filters" disabled>
-<label>조사연도<select id="year"></select></label><label>비교 시작연도<select id="baseline"></select></label>
+<label><span id="year-label">조사연도</span><select id="year"></select></label><label><span id="baseline-label">비교 시작연도</span><select id="baseline"></select></label>
 <label>표시 지표<select id="metric"><option value="daytime">주간인구 (명)</option><option value="index">주간인구지수 (%)</option><option value="net">통근·통학 순유입 (명)</option><option value="change">주간인구 증감 (명)</option></select></label>
 <label>성별<select id="sex"><option value="0">전체</option><option value="1">남자</option><option value="2">여자</option></select></label><label>연령 구간<select id="age"></select></label>
 <label>통계 지역 선택<select id="stat-region"><option value="전국">전국</option></select></label>
@@ -15,4 +15,4 @@
 <section class="card trend-section"><h2 id="trend-title">조사연도별 주간인구</h2><p>그래프의 점과 아래 표만 공식 관측값입니다. 점 사이 선은 추세 안내이며 중간 연도의 추정값이 아닙니다. 지역명·연령 구간이 없는 시점은 비워 둡니다.</p><div id="trend-chart"></div><div class="table-scroll"><table><thead><tr><th>조사연도</th><th>상주인구</th><th>유입인구</th><th>유출인구</th><th>주간인구</th><th>주간인구지수 (%)</th></tr></thead><tbody id="trend-table"></tbody></table></div></section>
 <section class="card"><h2>지역별 공식 주간인구</h2><p>시도 및 시군구 원자료를 모두 보존합니다. 상위 지역과 하위 지역이 함께 있으므로 행들을 합산하지 않습니다. 지도 미연결 지역도 선택해 시계열을 볼 수 있습니다.</p><label class="list-search">지역명 검색<input id="query" type="search"></label><p id="table-count"></p><div class="table-scroll"><table><thead><tr><th>공식 지역명</th><th>선택 지표</th><th>주간인구</th><th>지도 연결</th></tr></thead><tbody id="rows"></tbody></table></div></section>
 <footer><p>출처: <span id="sources"></span></p><p>표본조사 추정 결과이며 주민등록인구와 모집단·기준일이 다릅니다. 외국인가구·특별조사구는 제외하며, 2015·2020년은 내국인과 함께 일반가구·집단가구·집단시설가구에 사는 외국인을 포함합니다. 시도 유입·유출은 시도 경계 기준으로, 시군구 유입·유출 합계와 같지 않습니다.</p><p>연령 구간은 원자료 그대로 제공합니다. 2005년 고령 연령 구간은 후속 조사와 다르며, ‘65세이상’과 그 하위 구간을 중복 합산하지 않습니다. 공식 주간인구를 우선 사용하며 구성항목을 다시 합산해 원자료를 수정하지 않습니다. 연도별 조사 대상·정의 및 행정구역 개편에 유의하세요.</p><p id="audit"></p></footer>
-</main><script src="kakao-map.js"></script><script type="module" src="daytime.js"></script></body></html>
+</main><script src="kakao-map.js"></script><script type="module" src="daytime.js?v=daytime-change-1"></script></body></html>

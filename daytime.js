@@ -3,7 +3,15 @@ import {polygons,changeColor,COLORS} from './population-model.mjs';
 const $=s=>document.querySelector(s),fmt=(v,d=0)=>v==null?'자료 없음':v.toLocaleString('ko-KR',{maximumFractionDigits:d});
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const signed=v=>v==null?'비교 불가':`${v>0?'+':''}${fmt(v)}`;
-const state={year:2020,baseline:2015,sex:'0',age:'합계',metric:'daytime',key:'전국'};
+const changeMode=new URLSearchParams(location.search).get('mode')==='change';
+const state={year:2020,baseline:2015,sex:'0',age:'합계',metric:changeMode?'change':'daytime',key:'전국'};
+if(changeMode){
+  document.title='공식 주간인구 증감';
+  $('header h1').innerHTML='공식 주간인구 증감 <span>카카오맵</span>';
+  $('#year-label').textContent='종료 조사연도';$('#baseline-label').textContent='시작 조사연도';
+  $('#metric').replaceChildren(new Option('주간인구 증감 (명)','change'));
+  $('#map').setAttribute('aria-label','시군구 주간인구 증감 지도');
+}
 const mapState={selected:null};let dataset,features=[],byYear={},mapKeys=new Map(),resize;
 const labels={daytime:'주간인구',index:'주간인구지수',net:'통근·통학 순유입',change:'주간인구 증감'};
 const row=(year,key=state.key)=>observation(byYear[year]?.get(key),state.sex,state.age);
@@ -13,7 +21,7 @@ const unit=()=>state.metric==='index'?'%':'명';
 const choice=()=>`${state.age==='합계'?'전체 연령':state.age} · ${['전체','남자','여자'][Number(state.sex)]}`;
 const cuts=()=>state.metric==='index'?[50,75,90,100,110,125,150]:[10000,30000,50000,100000,200000,500000,1000000];
 const paint=v=>v==null?'#cbd5e1':['net','change'].includes(state.metric)?changeColor(v):COLORS[cuts().filter(t=>v>=t).length];
-function report(){if(parent!==window)requestAnimationFrame(()=>parent.postMessage({type:'population-layout',height:Math.ceil($('main').getBoundingClientRect().height),loaded:Boolean(dataset),subtitle:`시군구별 공식 주간인구 · ${choice()} · 조사연도별 비교`,date:`${state.year}년 조사${state.metric==='change'?` · ${state.baseline}년 대비`:''}`},location.origin));}
+function report(){if(parent!==window)requestAnimationFrame(()=>parent.postMessage({type:'population-layout',height:Math.ceil($('main').getBoundingClientRect().height),loaded:Boolean(dataset),subtitle:`시군구별 공식 ${labels[state.metric]} · ${choice()} · 조사연도별 비교`,date:state.metric==='change'?`${state.baseline}년 → ${state.year}년 조사`:`${state.year}년 조사`},location.origin));}
 Object.assign(window,{D:[],T:null,S:{metric:'daytime',metro:false},SIDO_PREFIX:Object.fromEntries(Object.entries(PROVINCES).map(([k,v])=>[v,k])),polys:polygons,escapeHTML:esc,nf:fmt,
   rate:p=>val(mapKeys.get(String(p.code))),scaleMax:()=>1,paint,
   paintLegend(el){
@@ -64,7 +72,7 @@ function renderTable(){
   $('#rows').replaceChildren(fragment);report();
 }
 function redraw(){if(features.length)draw($('#map'),features,[],mapState);}
-function render(){renderStats();renderTable();redraw();$('#status').textContent=`${state.year}년 공식 관측값 · ${choice()} · 중간 연도 보간 없음`;}
+function render(){renderStats();renderTable();redraw();$('#status').textContent=`${state.metric==='change'?`${state.baseline}년 → ${state.year}년 · 종료 주간인구 − 시작 주간인구`:`${state.year}년 공식 관측값`} · ${choice()} · 중간 연도 보간 없음`;}
 function sync(){
   if(state.baseline>state.year)state.baseline=state.year;$('#baseline').value=state.baseline;
   const ages=dataset.periods[state.year].ages;

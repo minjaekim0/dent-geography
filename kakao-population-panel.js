@@ -2,9 +2,9 @@
 (() => {
   const dentalBar=document.querySelector('[aria-label="치과 현황 지표"]');
   const eventBar=document.querySelector('#event-metric-bar');
-  const configs=[['population','population','dental','인구 분포'],['populationChange','population-change','events','인구 증감'],['daytime','daytime','dental','공식 주간인구']].map(([metric,id,section,title])=>({
+  const configs=[['population','population','dental','인구 분포'],['populationChange','population-change','events','인구 증감'],['daytime','daytime','dental','공식 주간인구'],['daytimeChange','daytime-change','events','공식 주간인구 증감']].map(([metric,id,section,title])=>({
     metric,section,panel:document.querySelector(`#${id}-panel`),frame:document.querySelector(`#${id}-frame`),status:document.querySelector(`#${id}-panel-status`),
-    ready:false,subtitle:`${metric==='daytime'?'시군구':'읍면동'}별 연령·성별·연도별 ${title}`,date:'인구 자료 불러오는 중'
+    ready:false,subtitle:`${metric.startsWith('daytime')?'시군구':'읍면동'}별 연령·성별·연도별 ${title}`,date:'인구 자료 불러오는 중'
   }));
   const saved=new Map();let active=null;
   const hiddenTargets=['#district','#local','.kakao-tools','#data-notes','header .actions .switch','[aria-label="지도 분류"] .filter','[data-panel="facilities"]','[data-panel="specialty"]','[data-panel="events"]','[data-panel="dental"]'];

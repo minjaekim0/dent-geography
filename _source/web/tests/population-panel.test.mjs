@@ -7,7 +7,7 @@ function fixture(){
   const messages=[];
   const node=(hidden=false,dataset={})=>({hidden,dataset,style:{},attributes:{},textContent:'',setAttribute(k,v){this.attributes[k]=v;},getAttribute(k){return k==='src'?this.src:this.attributes[k];}});
   const panel=node(true),frame=node(false,{src:'population.html?embed=1'}),status=node(),subtitle=node(),date=node();
-  const changePanel=node(true),changeFrame=node(false,{src:'population.html?embed=1&mode=change'}),changeStatus=node(),eventBar=node(true),eventKinds=['net','populationChange'].map(eventKind=>node(false,{eventKind}));
+  const changePanel=node(true),changeFrame=node(false,{src:'population.html?embed=1&mode=change'}),changeStatus=node(),eventBar=node(true),eventKinds=['net','populationChange','daytimeChange'].map(eventKind=>node(false,{eventKind}));
   changeFrame.contentWindow={postMessage:m=>messages.push({...m,change:true})};
   frame.contentWindow={postMessage:m=>messages.push(m)};
   const switches=[node(),node()],labels=[node(),node()],bar=node();
@@ -20,11 +20,13 @@ function fixture(){
   Object.assign(nodes,{'#population-change-panel':changePanel,'#population-change-frame':changeFrame,'#population-change-panel-status':changeStatus,'#event-metric-bar':eventBar});
   const daytimeFrame=node(false,{src:'daytime.html?embed=1'});daytimeFrame.contentWindow={postMessage:m=>messages.push(m)};
   Object.assign(nodes,{'#daytime-panel':node(true),'#daytime-frame':daytimeFrame,'#daytime-panel-status':node()});
+  const daytimeChangeFrame=node(false,{src:'daytime.html?embed=1&mode=change'});daytimeChangeFrame.contentWindow={postMessage:m=>messages.push({...m,daytimeChange:true})};
+  Object.assign(nodes,{'#daytime-change-panel':node(true),'#daytime-change-frame':daytimeChangeFrame,'#daytime-change-panel-status':node()});
   targets['[data-panel="events"]'].push(eventBar);
   let handler,suspended=0;
   const context=vm.createContext({document:{querySelector:s=>nodes[s],querySelectorAll:s=>s==='[data-section]'?sectionButtons:s==='[data-metric]'?metrics:s==='[data-event-kind]'?eventKinds:s==='[data-panel="dental"]'?[bar]:targets[s]||[]},location:{origin:'http://test.local'},kakaoControllers:new Map([['map',{suspend(){suspended++;}}]]),window:{addEventListener(type,fn){handler=fn;}}});
   vm.runInContext(readFileSync(new URL('../dist/kakao-population-panel.js',import.meta.url),'utf8'),context);
-  return {api:context.window.populationPanel,panel,frame,status,subtitle,date,switches,labels,bar,targets,metrics,sectionButtons,messages,changePanel,changeFrame,changeStatus,eventBar,eventKinds,daytimeFrame,daytimePanel:nodes['#daytime-panel'],get suspended(){return suspended;},send:data=>handler(data)};
+  return {api:context.window.populationPanel,panel,frame,status,subtitle,date,switches,labels,bar,targets,metrics,sectionButtons,messages,changePanel,changeFrame,changeStatus,eventBar,eventKinds,daytimeFrame,daytimePanel:nodes['#daytime-panel'],daytimeChangeFrame,daytimeChangePanel:nodes['#daytime-change-panel'],get suspended(){return suspended;},send:data=>handler(data)};
 }
 
 test('population selection is inline and lazy, hides dental-only controls, and restores prior view',()=>{
@@ -60,10 +62,13 @@ test('generated integration hook precedes dental calculations, and embedded mode
   const core=readFileSync(new URL('../dist/kakao-core.js',import.meta.url),'utf8');
   assert.match(html,/data-metric="population"/);
   assert.match(html,/data-event-kind="populationChange"/);
+  assert.match(html,/data-event-kind="daytimeChange"/);
+  assert.match(html,/data-src="daytime.html\?embed=1&amp;mode=change"/);
   assert.match(html,/data-metric="daytime"/);
   assert.ok(!/<div class="title-row">[^\n]*href="population.html"/.test(html));
   assert.match(html, /src="kakao-core\.js\?v=[a-f0-9]{12}"/);
-  assert.ok(html.indexOf('src="kakao-population-panel.js"')<html.indexOf('src="kakao-core.js?v='));
+  assert.match(html, /src="kakao-population-panel\.js\?v=[a-f0-9]{12}"/);
+  assert.ok(html.indexOf('src="kakao-population-panel.js?v=')<html.indexOf('src="kakao-core.js?v='));
   assert.match(core,/function redraw\(live=false\)\{if\(globalThis.populationPanel\?\.render\(S.metric\)\)return;eventLabels\(\);/);
 });
 
@@ -76,6 +81,19 @@ test('official daytime census is an independent dental-status metric with lazy l
   f.api.render('population');assert.equal(f.daytimePanel.hidden,true);
   f.api.render('daytime');assert.equal(f.date.textContent,'2005년 조사');
   f.api.render('dentalFacilities');assert.equal(f.daytimePanel.hidden,true);assert.equal(f.switches[1].hidden,false);
+});
+
+test('daytime change is an independent event metric and retains its own period across switches',()=>{
+  const f=fixture();assert.equal(f.api.render('daytimeChange'),true);
+  assert.equal(f.daytimeChangeFrame.src,'daytime.html?embed=1&mode=change');
+  assert.equal(f.daytimeFrame.src,undefined);assert.equal(f.changeFrame.src,undefined);
+  assert.equal(f.daytimeChangePanel.hidden,false);assert.equal(f.bar.hidden,true);assert.equal(f.eventBar.hidden,false);
+  assert.equal(f.eventKinds[2].attributes['aria-pressed'],'true');assert.equal(f.sectionButtons[1].attributes['aria-pressed'],'true');
+  f.send({origin:'http://test.local',source:f.daytimeChangeFrame.contentWindow,data:{type:'population-layout',height:2100,subtitle:'주간인구 증감',date:'2005년 → 2020년 조사',loaded:true}});
+  assert.equal(f.daytimeChangeFrame.style.height,'2100px');assert.equal(f.date.textContent,'2005년 → 2020년 조사');
+  f.api.render('daytime');assert.equal(f.daytimeChangePanel.hidden,true);assert.equal(f.eventBar.hidden,true);
+  f.api.render('daytimeChange');assert.equal(f.date.textContent,'2005년 → 2020년 조사');assert.equal(f.daytimePanel.hidden,true);
+  f.api.render('net');assert.equal(f.daytimeChangePanel.hidden,true);assert.equal(f.targets['#district'][0].hidden,false);
 });
 
 test('event population change has independent state and child messages, while event metric navigation stays visible',()=>{
