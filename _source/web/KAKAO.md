@@ -4,6 +4,7 @@
 
 공개 진입점: https://minjaekim0.github.io/dent-geography/
 기존 자체 SVG 지도는 `legacy/index.html`로 보관하고 웹에서는 제공하지 않는다.
+공개 화면의 지하철 노선 체크박스·별도 강조선 로딩은 제거했다. 카카오 기본 지도 자체의 지하철 표시는 그대로다.
 
 ```sh
 python3 -m http.server 4173 --bind 127.0.0.1 --directory web/dist

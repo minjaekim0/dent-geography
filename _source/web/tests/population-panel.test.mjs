@@ -62,7 +62,8 @@ test('generated integration hook precedes dental calculations, and embedded mode
   assert.match(html,/data-event-kind="populationChange"/);
   assert.match(html,/data-metric="daytime"/);
   assert.ok(!/<div class="title-row">[^\n]*href="population.html"/.test(html));
-  assert.ok(html.indexOf('src="kakao-population-panel.js"')<html.indexOf('src="kakao-core.js"'));
+  assert.match(html, /src="kakao-core\.js\?v=[a-f0-9]{12}"/);
+  assert.ok(html.indexOf('src="kakao-population-panel.js"')<html.indexOf('src="kakao-core.js?v='));
   assert.match(core,/function redraw\(live=false\)\{if\(globalThis.populationPanel\?\.render\(S.metric\)\)return;eventLabels\(\);/);
 });
 

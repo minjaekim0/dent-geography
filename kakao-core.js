@@ -182,8 +182,7 @@ b.disabled=isCount();
 b.dataset.ready='true';
 b.title='통계청 2020 인구주택총조사 통근·통학 기반 주간인구';
 document.querySelector('#foot').insertAdjacentText('beforeend',' 주간인구: 통계청 2020 인구주택총조사 표본(20%) 통근·통학.');redraw()}}).catch(()=>{});
-fetch('data/transport-network.json').then(r=>r.ok?r.json():null).then(x=>{T=x;
-if(T)redraw()}).catch(()=>{})}).catch(()=>showMapMessage(document.querySelector('#map'),'시군구 지도 데이터를 불러오지 못했습니다. 새로고침 후에도 계속되면 잠시 뒤 다시 시도해 주세요.'));
+}).catch(()=>showMapMessage(document.querySelector('#map'),'시군구 지도 데이터를 불러오지 못했습니다. 새로고침 후에도 계속되면 잠시 뒤 다시 시도해 주세요.'));
 
 function aggregateYears(first,last){
 const out={period:{start:first+'-01-01',end:last+'-12-31'},totals:{openings:0,closures:0},districts:{},regions:[],openingsByCode:{},closuresByCode:{},coverage:{districtOpenings:0,districtClosures:0,localOpenings:0,localClosures:0}},regions={};
@@ -285,7 +284,6 @@ if(S.denom==='daytime'&&!document.querySelector('#local').hidden)view(false);
 document.querySelectorAll('[data-denom]').forEach(x=>x.setAttribute('aria-pressed',x===b));
 document.querySelector('#subtitle').textContent='시군구별 '+dname()+' 대비 치과 지표 분포';
 redraw()});
-document.querySelector('#metro').onchange=e=>{S.metro=e.target.checked;
-redraw()};
+
 document.querySelectorAll('[data-event-kind]').forEach(b=>b.onclick=()=>{S.eventKind=S.metric=b.dataset.eventKind;redraw()});
 document.querySelectorAll('[data-view]').forEach(b=>b.onclick=()=>view(b.dataset.view==='local'));
