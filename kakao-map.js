@@ -73,10 +73,18 @@ function activeController() {
 }
 function fullRegionName(feature) {
   const p = feature.properties;
-  if (String(p.code).length !== 5) return p.name;
+  if (String(p.code).length !== 5) return globalThis.adminDisplayName?.(p.name)??p.name;
   const prefix = Object.entries(SIDO_PREFIX).find(([,code]) => String(p.code).startsWith(code))?.[0];
-  return (prefix ? prefix + ' ' : '') + p.name;
+  const name=(prefix ? prefix + ' ' : '') + p.name;
+  return globalThis.adminDisplayName?.(name)??name;
 }
+globalThis.refreshAdministrativeNames=()=>{
+  pickerFeatures=null;
+  for(const controller of kakaoControllers.values())if(controller.features?.length&&!controller.el.closest('[hidden]')){
+    updateRegionPicker(controller.features,controller.state);
+    regionInfo(controller.el,controller.features,controller.state);
+  }
+};
 function updateRegionPicker(features, state) {
   const picker = document.querySelector('#region-picker');
   if (pickerFeatures !== features) {

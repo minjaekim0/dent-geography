@@ -103,6 +103,7 @@ test('population page is separate, carries boundary limitations, and loads no de
   assert.ok(!html.includes('kakao-core.js'));
   assert.ok(!/specialties|facility-history|api-yearly-events|daytime_population/.test(js));
   assert.equal(manifest.boundary.historicalHarmonized,false);
-  assert.match(html,/과거 경계 재현이나 분동·합동 보정이 아닙니다/);
+  assert.match(html,/과거 경계 복원이 아니며/);
+  assert.match(html,/분할·통합을 임의 연결하거나 배분하지 않습니다/);
   assert.equal(createHash('sha256').update(readFileSync(resolve(dist,manifest.boundary.file))).digest('hex'),manifest.boundary.sha256);
 });

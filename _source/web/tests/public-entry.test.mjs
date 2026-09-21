@@ -7,7 +7,7 @@ test('default and compatibility entries expose only the Kakao renderer', () => {
   const main = read('../dist/index.html'), alias = read('../dist/kakao.html');
   assert.equal(main.slice(main.indexOf('\n')), alias.slice(alias.indexOf('\n')));
   for (const html of [main, alias]) {
-    assert.match(html, /src="kakao-map.js"/);
+    assert.match(html, /src="kakao-map.js\?v=[a-f0-9]+"/);
     assert.match(html, /data-metric="daytime"/);
     assert.match(html, /data-event-kind="populationChange"/);
     assert.doesNotMatch(html, /기존 지도|original-link|createSVGPoint|createElementNS/);

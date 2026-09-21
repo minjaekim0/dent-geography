@@ -56,7 +56,7 @@ let card=aside.querySelector('.region-info');
 if(!card){card=document.createElement('section');card.className='region-info';card.setAttribute('aria-label','선택 지역 정보');card.setAttribute('aria-live','polite');aside.prepend(card)}
 const f=F.find(f=>String(f.properties.code)===state.selected);
 if(!f){card.innerHTML='<h2>지역 정보</h2><p>지도에서 행정구역을 클릭하면<br>해당 지역의 현황을 볼 수 있습니다.</p>';return}
-const p=f.properties,fullName=level==='district'?((Object.entries(SIDO_PREFIX).find(([,code])=>String(p.code).startsWith(code))||[])[0]||'')+' '+p.name:p.name;
+const p=f.properties,sourceName=level==='district'?((Object.entries(SIDO_PREFIX).find(([,code])=>String(p.code).startsWith(code))||[])[0]||'')+' '+p.name:p.name,fullName=globalThis.adminDisplayName?.(sourceName)??sourceName;
 const row=(label,value)=>'<div><dt>'+escapeHTML(label)+'</dt><dd>'+escapeHTML(value)+'</dd></div>';
 const number=(value,unit)=>value==null?'자료 없음':nf(value)+unit;
 const per=(value,pop)=>value==null||!pop?'산출 불가':(value/pop*1e4).toFixed(2)+M[S.metric][1];
