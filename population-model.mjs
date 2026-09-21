@@ -36,10 +36,20 @@ export function populationChange(start,end,{min=0,max=100,sex=0}={}){
   const before=ageCount(start,min,max,sex),after=ageCount(end,min,max,sex);
   return {before,after,...(delta(after,before)||{count:null,percent:null})};
 }
-export function changeColor(value,metric='change'){
+export function changeScale(values,metric='change'){
+  const nonzero=Array.from(values||[],value=>Math.abs(Number(value))).filter(value=>Number.isFinite(value)&&value>0).sort((a,b)=>a-b);
+  if(!nonzero.length)return metric==='growth'?1:100;
+  // Avoid letting one exceptional district flatten every other district's colour.
+  return Math.max(metric==='growth'?0.01:1,nonzero[Math.min(nonzero.length-1,Math.ceil(nonzero.length*.95)-1)]);
+}
+function interpolate(start,end,amount){
+  const a=start.match(/\w\w/g).map(value=>parseInt(value,16)),b=end.match(/\w\w/g).map(value=>parseInt(value,16));
+  return '#'+a.map((value,index)=>Math.round(value+(b[index]-value)*amount).toString(16).padStart(2,'0')).join('');
+}
+export function changeColor(value,metric='change',maximum=metric==='growth'?10:5000){
   if(!Number.isFinite(value))return '#cbd5e1';
   if(value===0)return '#f8fafc';
-  const cuts=metric==='growth'?[1,5,10]:[100,1000,5000];
-  const index=cuts.filter(t=>Math.abs(value)>=t).length;
-  return (value<0?['#fee2e2','#fca5a5','#ef4444','#991b1b']:['#dcfce7','#86efac','#22c55e','#166534'])[index];
+  const amount=Math.min(1,Math.abs(value)/Math.max(1e-12,maximum));
+  // Blue → white → orange is continuous and readable for common colour-vision deficiencies.
+  return value<0?interpolate('#f8fafc','#1d4ed8',amount):interpolate('#f8fafc','#c2410c',amount);
 }

@@ -1,4 +1,4 @@
-import {ageCount,metricValue,areaKm2,polygons,isLocal,ageLabel,SEXES,COLORS,thresholds,color,populationChange,changeColor} from './population-model.mjs';
+import {ageCount,metricValue,areaKm2,polygons,isLocal,ageLabel,SEXES,COLORS,thresholds,color,populationChange,changeColor,changeScale} from './population-model.mjs?v=gradient-1';
 import {createAdminHistory} from './admin-history-model.mjs?v=admin-1';
 
 const $=selector=>document.querySelector(selector);
@@ -6,7 +6,7 @@ const fmt=(n,d=0)=>n==null||!Number.isFinite(n)?'자료 없음':n.toLocaleString
 const esc=text=>String(text??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const changeMode=new URLSearchParams(location.search).get('mode')==='change';
 const state={period:'',startPeriod:'',min:0,max:100,sex:0,metric:changeMode?'change':'count',province:'',selected:null};
-let admin,manifest,data,startData,features=[],geometryByCode=new Map(),areas=new Map(),revision=0,trendRevision=0,visibleRows=100,playTimer=null;
+let admin,manifest,data,startData,features=[],geometryByCode=new Map(),areas=new Map(),revision=0,trendRevision=0,visibleRows=100,playTimer=null,gradientMaximum=100;
 const yearCache=new Map(),seriesCache=new Map();
 const units=()=>['share','growth'].includes(state.metric)?'%':state.metric==='density'?'명/㎢':'명';
 const metricLabel=()=>state.metric==='change'?'인구 증감':state.metric==='growth'?'인구 증감률':state.metric==='share'?'전체 주민 중 비중':state.metric==='density'?'밀도 · 보유 경계면적 기준 참고':'인구수';
@@ -37,6 +37,7 @@ if(changeMode){
   cards[2].querySelector('small').textContent='지도 연결 · 양 시점 비교 가능';
   $('#population-table').closest('table').querySelectorAll('th')[2].textContent='시작 → 종료 인구 (명)';
   $('#boundary-note').textContent='종료 인구 − 시작 인구를 비교합니다. 공식 변경표로 검증한 일대일 명칭·코드 변경을 연결합니다. 분할·통합은 임의 연결·배분하지 않으며 확인된 집계 구역 변경은 비교 불가로 표시합니다. 같은 코드로 유지된 경계 변경은 전부 보정되지 않았습니다. 자료 누락은 0명이 아니며 최신 월과 연말 비교는 1년 변화가 아닙니다.';
+  document.querySelector('footer p:nth-of-type(2)').textContent='거주불명자는 2010년 10월부터, 재외국민은 2015년 1월부터 통계에 포함됩니다. 연도 사이에는 이 집계 범위 변경과 행정구역 개편의 영향이 있을 수 있습니다. 인구 증감 색상은 현재 선택 조건의 절댓값 상위 95%를 기준으로 연속적으로 진해집니다.';
 }
 const embedded=document.documentElement.classList.contains('embedded')&&parent!==window;
 let embedFrame;
@@ -58,12 +59,18 @@ if(embedded){
 Object.assign(window,{
   D:[],T:null,S:{metric:'population',metro:false},polys:polygons,escapeHTML:esc,nf:fmt,
   rate:p=>inProvince(String(p.code))?value(String(p.code)):null,
-  scaleMax:()=>1,paint:v=>changeMode?changeColor(v,state.metric):color(v,state.metric),
+  scaleMax:()=>1,paint:v=>changeMode?changeColor(v,state.metric,gradientMaximum):color(v,state.metric),
   paintLegend(el){
     if(changeMode){
+      /* Previous stepped legend retained in source history; the live legend below is continuous. */
+      /*
       const cuts=state.metric==='growth'?[1,5,10]:[100,1000,5000];
       const ranges=[`0 초과~${cuts[0]} 미만`,`${cuts[0]} 이상~${cuts[1]} 미만`,`${cuts[1]} 이상~${cuts[2]} 미만`,`${cuts[2]} 이상`];
       el.innerHTML=`<div class="legend-title">${metricLabel()} (${units()}) · 고정 구간</div><div class="legend-row">${[-1,1].map(sign=>[0,...cuts].map((n,i)=>`<span class="legend-item"><i style="background:${changeColor(sign*(n||.1),state.metric)}"></i>${sign<0?'감소':'증가'} ${ranges[i]}</span>`).join('')).join('')}<span class="legend-item"><i style="background:#f8fafc;border:1px solid #cbd5e1"></i>변화 없음</span><span class="legend-item"><i style="background:#cbd5e1"></i>비교 불가 / 범위 밖</span></div>`;
+      */
+      const maximum=fmt(gradientMaximum,state.metric==='growth'?2:0);
+      el.innerHTML=`<div class=\"legend-title\">${metricLabel()} (${units()}) · 연속 그라데이션</div><div class=\"gradient-scale\" style=\"background:linear-gradient(90deg,#1d4ed8,#f8fafc 50%,#c2410c)\"></div><div class=\"gradient-labels\"><span>감소 −${maximum} 이하</span><span>0</span><span>증가 +${maximum} 이상</span></div><div class=\"legend-row\"><span class=\"legend-item\"><i style=\"background:#cbd5e1\"></i>비교 불가 / 범위 밖</span><span>절댓값 상위 95%를 기준으로 진해집니다.</span></div>`;
+      el.innerHTML=`<div class="legend-title">${metricLabel()} (${units()}) · 연속 그라데이션</div><div class="gradient-scale" style="background:linear-gradient(90deg,#1d4ed8,#f8fafc 50%,#c2410c)"></div><div class="gradient-labels"><span>감소 −${maximum} 이하</span><span>0</span><span>증가 +${maximum} 이상</span></div><div class="legend-row"><span class="legend-item"><i style="background:#cbd5e1"></i>비교 불가 / 범위 밖</span><span>절댓값 상위 95%를 기준으로 진해집니다.</span></div>`;
       return;
     }
     const cuts=thresholds(state.metric);
@@ -158,7 +165,7 @@ function renderSummary(){
   }
 }
 function renderDetail(){
-  if(!state.selected){$('#region-info').innerHTML=`<h2>지역을 선택해 보세요</h2><p>지도나 아래 목록에서 읍면동을 선택하면 상세 인구와 연도별 변화를 볼 수 있습니다.</p><p class="muted">${changeMode?'초록은 증가, 빨강은 감소, 흰색은 변화 없음입니다. 회색은 양 시점 비교 불가·증감률 산출 불가·선택 범위 밖인 지역입니다.':'회색은 0명이 아니라 해당 시점 자료가 없거나 선택 범위 밖인 지역입니다.'}</p>`;return;}
+  if(!state.selected){$('#region-info').innerHTML=`<h2>지역을 선택해 보세요</h2><p>지도나 아래 목록에서 읍면동을 선택하면 상세 인구와 연도별 변화를 볼 수 있습니다.</p><p class="muted">${changeMode?'파랑은 감소, 주황은 증가이며 변화가 클수록 연속적으로 진해집니다. 흰색은 변화 없음입니다. 회색은 양 시점 비교 불가·증감률 산출 불가·선택 범위 밖인 지역입니다.':'회색은 0명이 아니라 해당 시점 자료가 없거나 선택 범위 밖인 지역입니다.'}</p>`;return;}
   const code=state.selected,record=data?.records[code],name=record?.name||geometryByCode.get(code)?.properties.name||code;
   if(changeMode){
     const change=comparison(code),start=startData?.records[code];
@@ -174,7 +181,14 @@ function renderDetail(){
   $('#region-info .muted').textContent=`원자료 행정기관코드 ${sourceCode(record,code)} · 연결코드 ${code} · ${geometryByCode.has(code)?'지도 연결 (과거 경계 미보정)':'보유 경계 미연결'}`;
   $('#clear-selection').onclick=()=>selectRegion(null);
 }
-function redrawMap(){if(features.length)draw($('#local-map'),features,[],mapState);}
+function updateGradientMaximum(){
+  if(!changeMode||!data||!startData)return;
+  gradientMaximum=changeScale(features.map(feature=>{
+    const code=String(feature.properties.code);
+    return inProvince(code)?value(code):null;
+  }),state.metric);
+}
+function redrawMap(){updateGradientMaximum();if(features.length)draw($('#local-map'),features,[],mapState);}
 function selectRegion(code,focus=false){
   state.selected=code;mapState.selected=code;
   if(code&&!inProvince(code)){state.province='';$('#province').value='';}

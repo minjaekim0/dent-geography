@@ -1,5 +1,5 @@
 import {PROVINCES,observation,metricValue,difference,regionKey} from './daytime-model.mjs';
-import {polygons,changeColor,COLORS} from './population-model.mjs';
+import {polygons,changeColor,changeScale,COLORS} from './population-model.mjs?v=gradient-1';
 import {createAdminHistory,censusComparable} from './admin-history-model.mjs?v=admin-1';
 const $=s=>document.querySelector(s),fmt=(v,d=0)=>v==null?'자료 없음':v.toLocaleString('ko-KR',{maximumFractionDigits:d});
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -13,7 +13,7 @@ if(changeMode){
   $('#metric').replaceChildren(new Option('주간인구 증감 (명)','change'));
   $('#map').setAttribute('aria-label','시군구 주간인구 증감 지도');
 }
-const mapState={selected:null};let admin,dataset,features=[],byYear={},mapKeys=new Map(),resize;
+const mapState={selected:null};let admin,dataset,features=[],byYear={},mapKeys=new Map(),resize,gradientMaximum=100;
 const labels={daytime:'주간인구',index:'주간인구지수',net:'통근·통학 순유입',change:'주간인구 증감'};
 const row=(year,key=state.key)=>observation(byYear[year]?.get(key),state.sex,state.age);
 const comparable=(a,b,key)=>censusComparable(byYear[a]?.get(key),byYear[b]?.get(key),admin);
@@ -33,12 +33,17 @@ const display=v=>['change','net'].includes(state.metric)?signed(v):fmt(v,state.m
 const unit=()=>state.metric==='index'?'%':'명';
 const choice=()=>`${state.age==='합계'?'전체 연령':state.age} · ${['전체','남자','여자'][Number(state.sex)]}`;
 const cuts=()=>state.metric==='index'?[50,75,90,100,110,125,150]:[10000,30000,50000,100000,200000,500000,1000000];
-const paint=v=>v==null?'#cbd5e1':['net','change'].includes(state.metric)?changeColor(v):COLORS[cuts().filter(t=>v>=t).length];
+const paint=v=>v==null?'#cbd5e1':['net','change'].includes(state.metric)?changeColor(v,'change',gradientMaximum):COLORS[cuts().filter(t=>v>=t).length];
 function report(){if(parent!==window)requestAnimationFrame(()=>parent.postMessage({type:'population-layout',height:Math.ceil($('main').getBoundingClientRect().height),loaded:Boolean(dataset),subtitle:`시군구별 공식 ${labels[state.metric]} · ${choice()} · 조사연도별 비교`,date:state.metric==='change'?`${state.baseline}년 → ${state.year}년 조사`:`${state.year}년 조사`},location.origin));}
 Object.assign(window,{D:[],T:null,S:{metric:'daytime',metro:false},SIDO_PREFIX:Object.fromEntries(Object.entries(PROVINCES).map(([k,v])=>[v,k])),polys:polygons,escapeHTML:esc,nf:fmt,
   rate:p=>mapValue({properties:p}),scaleMax:()=>1,paint,
   paintLegend(el){
-    if(['net','change'].includes(state.metric)){el.innerHTML=`<div class="legend-title">${labels[state.metric]} (명) · 고정 구간</div><div class="legend-row">${[-5000,-1000,-100,-1,0,1,100,1000,5000].map(v=>`<span class="legend-item"><i style="background:${paint(v)}"></i>${v===0?'변화 없음':`${v<0?'감소':'증가'} ${fmt(Math.abs(v))}${Math.abs(v)===1?'~99':Math.abs(v)===100?'~999':Math.abs(v)===1000?'~4,999':' 이상'}`}</span>`).join('')}<span>회색: 비교 불가</span></div>`;return;}
+    if(['net','change'].includes(state.metric)){
+      const maximum=fmt(gradientMaximum);
+      const negative=state.metric==='net'?'순유출':'감소',positive=state.metric==='net'?'순유입':'증가';
+      el.innerHTML=`<div class="legend-title">${labels[state.metric]} (명) · 연속 그라데이션</div><div class="gradient-scale" style="background:linear-gradient(90deg,#1d4ed8,#f8fafc 50%,#c2410c)"></div><div class="gradient-labels"><span>${negative} −${maximum} 이하</span><span>0</span><span>${positive} +${maximum} 이상</span></div><div class="legend-row"><span>절댓값 상위 95%를 기준으로 진해집니다.</span><span>회색: 비교 불가</span></div>`;
+      return;
+    }
     const t=cuts();el.innerHTML=`<div class="legend-title">${labels[state.metric]} (${unit()}) · 연도 공통 구간</div><div class="legend-row">${COLORS.map((c,i)=>`<span class="legend-item"><i style="background:${c}"></i>${i===0?`${fmt(t[0])} 미만`:i===t.length?`${fmt(t[i-1])} 이상`:`${fmt(t[i-1])}~${fmt(t[i])} 미만`}</span>`).join('')}<span>회색: 자료 없음</span></div>`;
   },
   regionInfo(el,fs,ms){if(ms.selected&&mapKeys.get(ms.selected)!==state.key){state.key=mapKeys.get(ms.selected);$('#stat-region').value=state.key;renderStats();}renderDetail();},
@@ -88,7 +93,11 @@ function renderTable(){
   for(const[key,r]of records){const tr=document.createElement('tr'),v=val(key);tr.innerHTML=`<td><button>${esc(r.fullName)}</button></td><td>${display(v)}</td><td>${fmt(row(state.year,key)?.daytime)}</td><td>${visibleKeys.has(key)?'명칭 연결 · 경계 미보정':'지도 미표시 (통계·추이 확인)'}</td>`;tr.querySelector('button').onclick=()=>select(key,true);fragment.append(tr);}
   $('#rows').replaceChildren(fragment);report();
 }
-function redraw(){if(features.length)draw($('#map'),features,[],mapState);}
+function updateGradientMaximum(){
+  if(!['net','change'].includes(state.metric)||!dataset)return;
+  gradientMaximum=changeScale(features.map(mapValue));
+}
+function redraw(){updateGradientMaximum();if(features.length)draw($('#map'),features,[],mapState);}
 function render(){renderStats();renderTable();redraw();$('#status').textContent=`${state.metric==='change'?`${state.baseline}년 → ${state.year}년 · 종료 주간인구 − 시작 주간인구`:`${state.year}년 공식 관측값`} · ${choice()} · 중간 연도 보간 없음`;}
 function sync(){
   if(state.baseline>state.year)state.baseline=state.year;$('#baseline').value=state.baseline;

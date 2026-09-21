@@ -1,7 +1,7 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
-import {populationChange,changeColor,ageCount} from '../dist/population-model.mjs';
+import {populationChange,changeColor,changeScale,ageCount} from '../dist/population-model.mjs';
 const load=year=>JSON.parse(readFileSync(new URL(`../dist/data/population/${year}.json`,import.meta.url),'utf8'));
 test('population change compares same filtered age/sex endpoints, missing is not zero',()=>{
   const start={ages:[Array(101).fill(5),Array(101).fill(2),Array(101).fill(3)]};
@@ -15,10 +15,11 @@ test('population change compares same filtered age/sex endpoints, missing is not
   assert.equal(populationChange(end,start).count,-303);
   assert.equal(populationChange(zero,zero).count,0);
 });
-test('diverging map distinguishes decline, growth, zero and missing with symmetric thresholds',()=>{
+test('diverging map uses a continuous blue-to-orange gradient with a robust symmetric scale',()=>{
   assert.equal(changeColor(null),'#cbd5e1');assert.equal(changeColor(NaN),'#cbd5e1');
-  assert.equal(changeColor(0),'#f8fafc');assert.equal(changeColor(-5000),'#991b1b');assert.equal(changeColor(5000),'#166534');
-  assert.equal(changeColor(-10,'growth'),'#991b1b');assert.equal(changeColor(10,'growth'),'#166534');
+  assert.equal(changeColor(0),'#f8fafc');assert.equal(changeColor(-5000),'#1d4ed8');assert.equal(changeColor(5000),'#c2410c');
+  assert.notEqual(changeColor(-2500),'#1d4ed8');assert.notEqual(changeColor(2500),'#c2410c');
+  assert.equal(changeScale([0,1,2,3,100]),100);
 });
 test('2024 to 2025 official national change and every paired record match direct subtraction',()=>{
   const a=load('2024-12'),b=load('2025-12');
