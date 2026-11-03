@@ -16,11 +16,18 @@ test('only real Kakao place links are clickable',()=>{
 test('public data exposes selected points and no original provider identifiers',()=>{
   const data=JSON.parse(read('../dist/data/current-clinics.json'));
   assert.equal(data.locations.length,19623);assert.equal(data.unlocated,1);
-  assert.equal(data.locations.filter(p=>p.source==='kakao').length,16840);
-  assert.equal(data.locations.filter(p=>p.source==='hira_unverified').length,2783);
+  assert.equal(data.locations.filter(p=>p.source==='kakao').length,17426);
+  assert.equal(data.locations.filter(p=>p.source==='hira_unverified').length,2197);
   assert.equal(new Set(data.locations.map(p=>p.id)).size,data.locations.length);
   assert.ok(data.locations.every(p=>p.lng>=124&&p.lng<=132&&p.lat>=33&&p.lat<=39.5));
   assert.doesNotMatch(JSON.stringify(data),/facilityKey|암호화요양기호|KAKAO_REST_API_KEY/);
+});
+
+test('reordered brand and location name keeps the same Yeosu clinic identity',()=>{
+  const data=JSON.parse(read('../dist/data/current-clinics.json'));
+  const clinic=data.locations.find(p=>p.name==='유디여수치과의원');
+  assert.equal(clinic.source,'kakao');assert.equal(clinic.kakaoName,'유디치과의원 여수점');
+  assert.equal(clinic.address,'전남광주통합특별시 여수시 신월로 806');
 });
 
 test('relocated clinic publishes the Kakao address and coordinates together',()=>{

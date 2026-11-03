@@ -1,7 +1,7 @@
-import {createAdminHistory,createRegionLabeler} from './admin-history-model.mjs?v=admin-1';
+import {createAdminHistory,createRegionLabeler} from './admin-history-model.mjs?v=incheon-split-2';
 // Display aliases only. Never mutate the dental calculation keys or statistics.
 try{
-  const response=await fetch('data/admin-history.json?v=admin-1');if(!response.ok)throw Error(response.status);
+  const response=await fetch('data/admin-history.json?v=incheon-split-2');if(!response.ok)throw Error(response.status);
   window.adminDisplayName=createRegionLabeler(createAdminHistory(await response.json()));
   window.refreshAdministrativeNames?.();
 }catch(error){

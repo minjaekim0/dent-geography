@@ -34,8 +34,47 @@ class KakaoLocationTests(unittest.TestCase):
         self.assertEqual(k.selected_point(f, r), ([127.01, 37.51], 'kakao'))
         self.assertTrue(r['largeDifferenceReview'])
 
-    def test_branch_name_not_ignored(self):
-        self.assertEqual(k.decide(facility(), [place(place_name='예시치과의원 강남점')])['status'], 'no_unique_match')
+    def test_optional_branch_allowed_when_building_matches(self):
+        self.assertEqual(k.decide(facility(), [place(place_name='예시치과의원 강남점')])['status'], 'matched')
+
+    def test_branch_not_ignored_when_building_differs(self):
+        self.assertEqual(k.decide(facility(), [place(place_name='예시치과의원 강남점', road_address_name='서울 강남구 다른로 1')])['status'], 'no_unique_match')
+
+    def test_yud_yeosu_word_order(self):
+        f = facility(name='유디여수치과의원', address='전남광주통합특별시 여수시 신월로 806, 2~3층 (서교동)')
+        p = place(place_name='유디치과의원 여수점', road_address_name='전남광주통합특별시 여수시 신월로 806')
+        r = k.decide(f, [p])
+        self.assertEqual(r['status'], 'matched')
+        self.assertEqual(r['match']['nameEvidence'], 'reordered_location_branch')
+        self.assertTrue(k.name_match_evidence('유디여수 치과의원', '유디치과의원 여수점', f['address'], p['road_address_name'], True))
+
+    def test_region_prefix_order_can_change(self):
+        self.assertTrue(k.name_match_evidence('여수유디치과의원', '유디여수치과', '전남 여수시 신월로 1', '전남 여수시 신월로 1', True))
+        self.assertTrue(k.name_match_evidence('서울미소치과의원', '미소서울치과', '서울특별시 강남구 예시로 1', '서울 강남구 예시로 1', True))
+        self.assertFalse(k.name_match_evidence('김이치과의원', '이김치과의원', '서울 강남구 예시로 1', '서울 강남구 예시로 1', True))
+
+    def test_different_explicit_branches_are_not_conflated(self):
+        f = facility(name='유디치과의원 여수점', address='전남 여수시 신월로 1')
+        p = place(place_name='유디치과의원 순천점', road_address_name='전남 여수시 신월로 1')
+        self.assertEqual(k.decide(f,[p])['status'], 'no_unique_match')
+
+    def test_incheon_split_addresses_can_match_same_building(self):
+        for child in ('서해구', '검단구'):
+            f = facility(address='인천광역시 서구 원당대로 1')
+            p = place(road_address_name=f'인천 {child} 원당대로 1')
+            r = k.decide(f, [p])
+            self.assertEqual(r['status'], 'matched')
+            self.assertTrue(r['match']['sameBuilding'])
+            self.assertTrue(r['match']['administrativeTransition'])
+        self.assertFalse(k.compatible_locality('인천 서해구 예시로 1','인천 검단구 예시로 1'))
+        self.assertFalse(k.compatible_locality('인천 서구 예시로 1','부산 서구 예시로 1'))
+
+    def test_stronger_name_preserves_existing_place_identity(self):
+        strong = k.decide(facility(name='예시강남치과의원'), [place(place_name='예시강남치과의원')])
+        weak = k.decide(facility(name='예시치과의원'), [place(place_name='예시치과의원 강남점')])
+        k.reject_reused_places([strong,weak])
+        self.assertEqual(strong['status'], 'matched')
+        self.assertEqual(weak['status'], 'place_reused_review')
 
     def test_changed_building_prefers_kakao_for_unique_local_name(self):
         result = k.decide(facility(), [place(road_address_name='서울 강남구 예시로 100')])

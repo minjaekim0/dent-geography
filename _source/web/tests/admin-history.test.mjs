@@ -20,7 +20,7 @@ test('official administrative-code mappings handle non-prefix recodes and chaine
   assert.notEqual(h.code('2900000000'),h.code('4600000000')); // no province merger allocation
   assert.notEqual(h.code('2811000000'),h.code('2812500000')); // no whole-gu split alias
   assert.notEqual(h.code('4119051000'),h.code('4119251000')); // no guessed Bucheon name match
-  assert.equal(registry.events.reduce((n,e)=>n+e.pairs.length,0),1022);
+  assert.equal(registry.events.reduce((n,e)=>n+e.pairs.length,0),1037);
 });
 test('every snapshot retains every source row and cell without collisions or invented observations',()=>{
   const manifest=read('data/population/manifest.json');let count=0;
@@ -39,7 +39,7 @@ test('every snapshot retains every source row and cell without collisions or inv
   assert.equal(count,73087);
   const before=snapshot('2026-08'),after=h.normalizeSnapshot(before);
   assert.equal(features.filter(f=>before.records[f.properties.code]).length,3115);
-  assert.equal(features.filter(f=>after.records[h.code(f.properties.code)]).length,3541);
+  assert.equal(features.filter(f=>after.records[h.code(f.properties.code)]).length,3556);
 });
 test('age/sex changes use exact old and new observations, and source-period province remains correct',()=>{
   const a=snapshot('2017-12'),b=snapshot('2018-12'),aa=h.normalizeSnapshot(a),bb=h.normalizeSnapshot(b);
@@ -102,4 +102,9 @@ test('main dental labels resolve province abbreviations without conflating diffe
   assert.equal(label('강원 춘천시'),'강원특별자치도 춘천시 (원자료: 강원 춘천시)');
   assert.equal(label('경북 군위군'),'대구광역시 군위군 (원자료: 경북 군위군)');
   assert.equal(label('충북 청주시'),'충북 청주시');
+  assert.equal(label('인천 서구'),'인천광역시 서해구·검단구 (원자료: 인천 서구 · 분구 전 경계)');
+  assert.equal(h.code('2826000000'),'2826000000');
+  assert.notEqual(h.code('2827500000'),h.code('2829000000'));
+  assert.equal(h.code('2826053000'),'2827553000');
+  assert.equal(h.code('2826051500'),'2826051500'); // 검암경서동 geometry changed, no identity alias
 });

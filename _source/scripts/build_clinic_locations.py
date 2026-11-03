@@ -18,6 +18,7 @@ def main():
         lon, lat = f['geometry']['coordinates']
         rows.append({'id': hashlib.sha256(p['facilityKey'].encode()).hexdigest()[:20],
                      'name': p['name'], 'address': p['address'], 'kind': p['kind'],
+                     'kakaoName': p.get('kakaoName'),
                      'addressSource': p.get('addressSource'),
                      'addressPriorityApplied': p.get('addressPriorityApplied', False),
                      'lng': lon, 'lat': lat, 'source': p['coordinateSource'],
@@ -25,7 +26,7 @@ def main():
                      'queriedAt': p.get('kakaoQueriedAt') if p['coordinateSource'] == 'kakao' else None,
                      'largeDifference': p.get('largeDifferenceReview', False) if p['coordinateSource'] == 'kakao' else False})
     result = {'hiraAsOf': '2026-06-30', 'kakaoQueriedOn': '2026-11-03', 'total': len(data['features']),
-              'matchingVersion': 3,
+              'matchingVersion': 4,
               'unlocated': missing, 'scope': '심평원 분기 현황의 치과의원·치과병원 전체(대학·부속 등 포함)',
               'locations': rows}
     target = ROOT / 'web/dist/data/current-clinics.json'

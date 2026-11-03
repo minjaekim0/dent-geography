@@ -5,7 +5,7 @@ import json
 from collections import Counter
 from pathlib import Path
 
-from reconcile_kakao_locations import ROOT, VERSION, building, dental_name, locality, selected_point, valid_point
+from reconcile_kakao_locations import ROOT, VERSION, name_match_evidence, compatible_locality, same_building_address, selected_point, valid_point
 
 
 def audit(folder):
@@ -34,13 +34,16 @@ def audit(folder):
             places = [d for d in docs if str(d.get('id')) == m['placeId']]
             assert len(places) >= 1
             d = places[-1]
-            assert dental_name(f['name']) == dental_name(d['place_name'])
+            selected_address = d.get('road_address_name') or d.get('address_name')
+            same_building = same_building_address(f['address'], d.get('road_address_name'))
+            assert m['sameBuilding'] == same_building
+            assert name_match_evidence(f['name'], d['place_name'], f['address'], selected_address, same_building)
             assert '치과' in d['category_name']
             assert valid_point(d['x'], d['y'])
             assert coords == [float(d['x']), float(d['y'])]
             assert feature['properties']['address'] == (d.get('road_address_name') or d.get('address_name'))
             assert feature['properties']['addressSource'] == 'kakao'
-            assert m['sameBuilding'] or locality(f['address']) == locality(m['selectedAddress'])
+            assert same_building or compatible_locality(f['address'], selected_address)
             continue
         assert feature['properties']['address'] == f['address']
         assert feature['properties']['addressSource'] == 'hira'
@@ -48,7 +51,8 @@ def audit(folder):
                   'place_reused_review': '기관 간 장소 중복'}.get(r['status'])
         if reason is None:
             dental = [d for d in docs if '치과' in d.get('category_name', '')]
-            names = [d for d in dental if dental_name(f['name']) == dental_name(d.get('place_name'))]
+            names = [d for d in dental if name_match_evidence(f['name'], d.get('place_name'), f['address'],
+                     d.get('road_address_name') or d.get('address_name'), same_building_address(f['address'], d.get('road_address_name')))]
             valid = [d for d in names if valid_point(d.get('x'), d.get('y'))]
             if not docs:
                 reason = '검색 결과 없음'
@@ -69,7 +73,7 @@ def audit(folder):
         writer = csv.writer(handle)
         writer.writerow(['기관명', '심평원 주소', '보류 사유', '좌표 출처', '카카오 검색 후보'])
         writer.writerows(held)
-    before = folder / 'before-kakao-address-priority-2026-11-03' / 'audit.json'
+    before = folder / 'before-name-order-incheon-2026-11-03' / 'audit.json'
     old = {r['facilityKey']: r for r in json.loads(before.read_text())} if before.exists() else {}
     report = {'checked': len(facilities), 'kakaoMatches': len(ids), 'remaining': len(held),
               'remainingReasons': dict(reasons), 'additionalMatches': sum(r['status'] == 'matched' and old.get(r['facilityKey'], {}).get('status') != 'matched' for r in results),

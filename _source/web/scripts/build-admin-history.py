@@ -10,6 +10,7 @@ import re
 import sys
 from pathlib import Path
 import openpyxl
+from incheon_split import extend_incheon_registry
 
 ROOT = Path(__file__).resolve().parents[1]
 INPUT = Path(sys.argv[1])
@@ -132,5 +133,6 @@ for key, date, old, new, law in [
 events.sort(key=lambda e: (e['effective'], e['id']))
 result = dict(schemaVersion=1, reviewedAt='2026-09-21', scope='검증한 명칭·코드·소속 변경의 일대일 연결. 전국 모든 분할·통합·경계 변경을 망라하거나 과거 경계를 복원한 자료가 아닙니다.', events=events,
               seriesGroups=sorted(p.stem.removeprefix('series-') for p in (ROOT/'dist/data/population').glob('series-*.json')))
+result = extend_incheon_registry(result, ROOT.parent)
 (ROOT/'dist/data/admin-history.json').write_text(json.dumps(result, ensure_ascii=False, separators=(',', ':'))+'\n')
 print([(e['id'], len(e['pairs'])) for e in events])

@@ -31,6 +31,7 @@ function openClinic(state, marker, p) {
   source.textContent = p.source === 'kakao' ? '주소·위치: 카카오맵 · ' + data.kakaoQueriedOn + ' 조회' : '주소·위치: 심평원 · 카카오 연결 보류';
   const date = document.createElement('small'); date.textContent = '기관 목록: ' + data.hiraAsOf + ' · 현재 영업 여부는 별도 확인';
   card.append(title, close, address, source, date);
+  if (p.kakaoName && p.kakaoName !== p.name) { const name = document.createElement('p'); name.textContent = '카카오 명칭: ' + p.kakaoName; card.append(name); }
   if (p.addressPriorityApplied) { const note = document.createElement('p'); note.textContent = '심평원 주소와 달라 카카오 주소·위치를 우선 적용'; card.append(note); }
   if (p.largeDifference) { const note = document.createElement('p'); note.textContent = '심평원 원본 좌표와 100m 초과 차이 · 카카오 위치 우선'; card.append(note); }
   const href = placeLink(p.placeUrl);
@@ -41,7 +42,7 @@ async function loadData() {
   if (data) return data;
   if (loading) return loading;
   tell('치과 위치를 불러오는 중입니다…');
-  loading = fetch('data/current-clinics.json?v=address-priority-3').then(response => {
+  loading = fetch('data/current-clinics.json?v=incheon-names-4').then(response => {
     if (!response.ok) throw new Error('위치 데이터를 불러오지 못했습니다.');
     return response.json();
   }).then(value => { data = value; failed = false; return data; }).catch(error => {
