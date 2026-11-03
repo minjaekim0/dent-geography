@@ -123,16 +123,56 @@ class KakaoLocationTests(unittest.TestCase):
         self.assertEqual(result['match']['selectedAddress'], p['road_address_name'])
 
     def test_suffix_variants_still_require_unique_candidate(self):
-        self.assertEqual(k.decide(facility(), [place(), place(id='456', place_name='예시치과')])['status'], 'ambiguous_review')
+        self.assertEqual(k.decide(facility(), [place(), place(id='456', place_name='예시치과')])['match']['placeId'], '123')
 
     def test_missing_phone_can_match_exact_name_and_building(self):
         self.assertEqual(k.decide(facility(), [place(phone='')])['status'], 'matched')
 
     def test_multiple_places_not_accepted(self):
-        self.assertEqual(k.decide(facility(), [place(), place(id='456')])['status'], 'ambiguous_review')
+        self.assertEqual(k.decide(facility(), [place(), place(id='456',x='127.2')])['status'], 'ambiguous_review')
 
-    def test_truncated_search_not_accepted(self):
-        self.assertEqual(k.decide(facility(), [place()], True)['status'], 'truncated_review')
+    def test_same_name_address_and_nearby_duplicate_place_listings(self):
+        r=k.decide(facility(),[place(),place(id='456',x='127.01001')])
+        self.assertEqual(r['status'],'matched')
+        self.assertEqual(r['duplicateListingsCollapsed'],['123','456'])
+
+    def test_explicit_dental_listing_preferred_over_generic_duplicate(self):
+        r=k.decide(facility(),[place(),place(id='456',category_name='의료,건강 > 병원')])
+        self.assertEqual(r['status'],'matched')
+        self.assertEqual(r['match']['placeId'],'123')
+
+    def test_exact_name_and_address_can_match_with_limited_search(self):
+        result = k.decide(facility(), [place()], True)
+        self.assertEqual(result['status'], 'matched')
+        self.assertTrue(result['searchLimited'])
+
+    def test_limited_search_does_not_guess_relocated_clinic(self):
+        self.assertEqual(k.decide(facility(), [place(road_address_name='서울 강남구 다른로 2')], True)['status'], 'truncated_review')
+
+    def test_spelled_letters_and_korean_name_at_same_address(self):
+        r = k.decide(facility(name='SM치과의원'), [place(place_name='에스엠치과의원')])
+        self.assertEqual(r['status'], 'matched')
+        self.assertEqual(r['match']['nameEvidence'], 'phonetic_or_bilingual_name')
+        self.assertEqual(k.decide(facility(name='SM치과의원'), [place(place_name='에스엠치과의원',road_address_name='서울 강남구 다른로 2')])['status'], 'matched')
+        self.assertEqual(k.decide(facility(name='SM치과의원'), [place(place_name='에스엠치과의원',road_address_name='부산 강서구 다른로 2')])['status'], 'no_unique_match')
+
+    def test_bilingual_parentheses_and_common_words(self):
+        for first, second in [('서울에스(S)치과의원','서울S치과의원'),('더(THE)착한치과의원','더착한치과의원'),('에이(A)플란트치과의원','A플란트치과의원'),('Dr.서치과의원','닥터서치과의원'),('센트럴D＆D치과의원','센트럴디앤디치과의원'),('화이트이(e)치과의원','화이트e치과의원 창원점')]:
+            self.assertEqual(k.decide(facility(name=first),[place(place_name=second)])['status'],'matched',(first,second))
+        self.assertTrue(k.name_match_evidence('SM(에스엠)치과의원','에스엠치과의원','서울 강남구 예시로 1','서울 강남구 예시로 1',True))
+        self.assertFalse(k.name_match_evidence('강남(A)치과의원','강남(B)치과의원','서울 강남구 예시로 1','서울 강남구 예시로 1',True))
+
+    def test_other_incheon_transitions_use_the_same_street(self):
+        for old,new in [('동구','제물포구'),('중구','제물포구'),('중구','영종구')]:
+            r=k.decide(facility(address=f'인천광역시 {old} 송미로 7'),[place(road_address_name=f'인천 {new} 송미로 7')])
+            self.assertEqual(r['status'],'matched')
+            self.assertTrue(r['match']['sameBuilding'])
+        self.assertFalse(k.compatible_locality('인천 제물포구 송미로 7','인천 영종구 송미로 7'))
+
+    def test_generic_medical_category_can_use_exact_dental_name_and_address(self):
+        self.assertEqual(k.decide(facility(),[place(category_name='의료,건강 > 병원 > 일반의원')])['status'],'matched')
+        for category in ['서비스 > 주차장','의료,건강 > 치과기공소','의료,건강 > 의료기기']:
+            self.assertEqual(k.decide(facility(),[place(category_name=category)])['status'],'no_unique_match')
 
     def test_non_dental_and_invalid_coordinates_rejected(self):
         for p in [place(category_name='의료기기'), place(x='NaN'), place(y='0'), place(x=None)]:

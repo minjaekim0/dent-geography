@@ -16,11 +16,23 @@ test('only real Kakao place links are clickable',()=>{
 test('public data exposes selected points and no original provider identifiers',()=>{
   const data=JSON.parse(read('../dist/data/current-clinics.json'));
   assert.equal(data.locations.length,19623);assert.equal(data.unlocated,1);
-  assert.equal(data.locations.filter(p=>p.source==='kakao').length,17426);
-  assert.equal(data.locations.filter(p=>p.source==='hira_unverified').length,2197);
+  assert.equal(data.locations.filter(p=>p.source==='kakao').length,17771);
+  assert.equal(data.locations.filter(p=>p.source==='hira_unverified').length,1852);
   assert.equal(new Set(data.locations.map(p=>p.id)).size,data.locations.length);
   assert.ok(data.locations.every(p=>p.lng>=124&&p.lng<=132&&p.lat>=33&&p.lat<=39.5));
   assert.doesNotMatch(JSON.stringify(data),/facilityKey|암호화요양기호|KAKAO_REST_API_KEY/);
+});
+
+test('strong address and name evidence handles phonetics, district changes and generic medical categories',()=>{
+  const data=JSON.parse(read('../dist/data/current-clinics.json'));
+  for(const [name,area,address,kakaoName] of [
+    ['SM치과의원','울산','울산 남구 삼산로 136','에스엠치과의원'],
+    ['송림푸른하늘치과의원','인천','인천 제물포구 송미로 7','송림푸른하늘치과의원'],
+    ['이레치과의원','성남','경기 성남시 수정구 산성대로 481','이레치과의원']
+  ]){
+    const p=data.locations.find(p=>p.name===name&&p.address.includes(area));
+    assert.ok(p);assert.equal(p.source,'kakao');assert.equal(p.address,address);assert.equal(p.kakaoName,kakaoName);
+  }
 });
 
 test('reordered brand and location name keeps the same Yeosu clinic identity',()=>{

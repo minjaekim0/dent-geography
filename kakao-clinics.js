@@ -42,7 +42,7 @@ async function loadData() {
   if (data) return data;
   if (loading) return loading;
   tell('치과 위치를 불러오는 중입니다…');
-  loading = fetch('data/current-clinics.json?v=incheon-names-4').then(response => {
+  loading = fetch('data/current-clinics.json?v=evidence-priority-5').then(response => {
     if (!response.ok) throw new Error('위치 데이터를 불러오지 못했습니다.');
     return response.json();
   }).then(value => { data = value; failed = false; return data; }).catch(error => {

@@ -23,7 +23,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 ENDPOINT = 'https://dapi.kakao.com/v2/local/search/keyword.json'
 VERSION = 1
-MATCHING_VERSION = 4
+MATCHING_VERSION = 5
 
 
 def compact(value):
@@ -97,29 +97,73 @@ def compatible_locality(first, second):
         return True
     # Old Seo-gu overlaps both successors, but the successors are NOT aliases
     # for each other. This relationship is used for clinic identity only.
+    transitions = {'서구': {'서해구', '검단구'}, '동구': {'제물포구'}, '중구': {'제물포구', '영종구'}}
     return (a[0] == b[0] == '인천' and len(a) == len(b) == 2 and
-            ((a[1] == '서구' and b[1] in ('서해구', '검단구')) or
-             (b[1] == '서구' and a[1] in ('서해구', '검단구'))))
+            (b[1] in transitions.get(a[1], set()) or a[1] in transitions.get(b[1], set())))
+
+
+def street_building(value):
+    m = re.search(r'([가-힣a-zA-Z0-9·.]+(?:대로|로|길))\s+(\d+(?:-\d+)?)(?=$|[\s,(])', value or '')
+    return (compact(m.group(1)), m.group(2)) if m else None
 
 
 def same_building_address(first, second):
     original = building(first)
     if original and original == building(second):
         return True
-    if not compatible_locality(first, second):
+    a, b = locality(first), locality(second)
+    # The same road/building within one city is stronger evidence than an
+    # outdated ward label, including ward-boundary adjustments in nested cities.
+    same_city = bool(a and b and len(a) > 1 and len(b) > 1 and a[0] == b[0] and a[1] == b[1] and a[1].endswith('시'))
+    if not compatible_locality(first, second) and not same_city:
         return False
     # Keep the road and full building number while allowing the gu name to
     # change under the explicitly supported split above.
-    def street(value):
-        m = re.search(r'([가-힣a-zA-Z0-9·.]+(?:대로|로|길))\s+(\d+(?:-\d+)?)(?=$|[\s,(])', value or '')
-        return (compact(m.group(1)), m.group(2)) if m else None
-    a, b = street(first), street(second)
+    a, b = street_building(first), street_building(second)
     return bool(a and a == b)
+
+
+LETTER_NAMES = dict(zip('abcdefghijklmnopqrstuvwxyz',
+    ['에이','비','씨','디','이','에프','지','에이치','아이','제이','케이','엘','엠','엔','오','피','큐','알','에스','티','유','브이','더블유','엑스','와이','제트']))
+SPOKEN_WORDS = {'the':'더', 'dr':'닥터', 'one':'원', 'rapha':'라파', 'lim':'림',
+                'top':'탑', 'sky':'스카이', 'smile':'스마일', 'white':'화이트', 'best':'베스트',
+                'plus':'플러스', 'good':'굿', 'new':'뉴', 'line':'라인', 'star':'스타', 'smart':'스마트',
+                'happy':'해피', 'dream':'드림', 'clear':'클리어', 'dental':'덴탈'}
+
+
+def spoken_names(value):
+    text = unicodedata.normalize('NFKC', value or '').casefold()
+    def letters(m):
+        return ''.join(LETTER_NAMES[c] for c in m.group())
+    # Drop a parenthetical spelling only when it actually repeats its prefix.
+    # Thus 에스(S) is redundant, while a branch marker such as 강남(A) survives.
+    def bilingual(m):
+        body, prefix = m.group(1), text[:m.start()]
+        latin = compact(body)
+        if latin and re.fullmatch('[a-z]+', latin):
+            pronunciations = {''.join(LETTER_NAMES[c] for c in latin), SPOKEN_WORDS.get(latin, '')} - {''}
+            if any(compact(prefix).endswith(p) for p in pronunciations):
+                return ''
+        previous = re.search('[a-z]+$', prefix)
+        if previous:
+            latin = previous.group()
+            if compact(body) in {''.join(LETTER_NAMES[c] for c in latin), SPOKEN_WORDS.get(latin, '')}:
+                return ''
+        return m.group()
+    text = re.sub(r'\(([^()]*)\)', bilingual, text)
+    text = text.replace('&', '앤').replace("'s", '스').replace('`s', '스')
+    return {re.sub('[a-z]+', letters, text),
+            re.sub('[a-z]+', lambda m: SPOKEN_WORDS.get(m.group(), letters(m)), text)}
 
 
 def name_match_evidence(first, second, first_address='', second_address='', same_building=False):
     if dental_name(first) and dental_name(first) == dental_name(second):
         return 'normalized_exact'
+    if (same_building or compatible_locality(first_address, second_address)) and re.search('[a-zA-Z]', (first or '') + (second or '')):
+        for a in spoken_names(first):
+            for b in spoken_names(second):
+                if name_match_evidence(a, b, first_address, second_address, same_building):
+                    return 'phonetic_or_bilingual_name'
     regions = set()
     for address in (first_address, second_address):
         area = locality(address)
@@ -161,15 +205,26 @@ def name_match_evidence(first, second, first_address='', second_address='', same
 
 def name_strength(match):
     return {'normalized_exact': 3, 'reordered_location_branch': 2,
-            'optional_branch_same_building': 1}.get(match.get('nameEvidence'), 0)
+            'phonetic_or_bilingual_name': 2, 'optional_branch_same_building': 1}.get(match.get('nameEvidence'), 0)
+
+
+def identity_strength(match):
+    return (name_strength(match), not match.get('categoryCorroboratedByNameAndAddress', False),
+            match.get('literalNameAgrees', False), match.get('telephoneAgrees', False))
+
+
+def dental_place(document, same_building=False):
+    category = document.get('category_name', '')
+    name = document.get('place_name', '')
+    if any(word in category + ' ' + name for word in ('주차장', '기공소', '기공실', '의료기기', '의료용품', '연구소', '치과재료')):
+        return False
+    return '치과' in category or (same_building and '치과' in name and '의료' in category)
 
 
 def decide(facility, documents, truncated=False):
     candidates = {str(d['id']): d for d in documents if d.get('id')}
     matches = []
     for place_id, d in candidates.items():
-        if '치과' not in d.get('category_name', ''):
-            continue
         if not valid_point(d.get('x'), d.get('y')):
             continue
         # Telephone agreement is diagnostic only, per the user's preference.
@@ -178,6 +233,8 @@ def decide(facility, documents, truncated=False):
         selected_address = d.get('road_address_name') or d.get('address_name') or ''
         same_building = same_building_address(facility['address'], d.get('road_address_name'))
         same_locality = compatible_locality(facility['address'], selected_address)
+        if not dental_place(d, same_building):
+            continue
         name_evidence = name_match_evidence(facility['name'], d.get('place_name'), facility['address'], selected_address, same_building)
         if not name_evidence:
             continue
@@ -188,7 +245,9 @@ def decide(facility, documents, truncated=False):
                         'selectedAddress': selected_address, 'sameBuilding': same_building,
                         'sameLocality': same_locality, 'addressPriorityApplied': not same_building,
                         'nameEvidence': name_evidence,
+                        'literalNameAgrees': compact(facility['name']) == compact(d['place_name']),
                         'administrativeTransition': locality(facility['address']) != locality(selected_address),
+                        'categoryCorroboratedByNameAndAddress': '치과' not in d.get('category_name', ''),
                         'placeUrl': d.get('place_url'),
                         'evidence': ('exact_name_and_road_building' if compact(facility['name']) == compact(d.get('place_name'))
                                      else 'optional_clinic_suffix_and_road_building') if same_building and name_evidence == 'normalized_exact'
@@ -201,15 +260,28 @@ def decide(facility, documents, truncated=False):
     if exact:
         matches = exact
     if matches:
-        best = max(name_strength(match) for match in matches)
-        matches = [match for match in matches if name_strength(match) == best]
+        best = max(identity_strength(match) for match in matches)
+        matches = [match for match in matches if identity_strength(match) == best]
+    duplicate_ids = []
+    if len(matches) > 1 and all(match['sameBuilding'] for match in matches):
+        places = [candidates[match['placeId']] for match in matches]
+        phones = {re.sub(r'\D', '', p.get('phone') or '') for p in places} - {''}
+        first = matches[0]
+        equivalent = all(name_match_evidence(first['placeName'], m['placeName'], first['selectedAddress'], m['selectedAddress'], True)
+                         and distance((first['longitude'], first['latitude']), (m['longitude'], m['latitude'])) <= 30 for m in matches)
+        if equivalent and len(phones) <= 1:
+            duplicate_ids = sorted(m['placeId'] for m in matches)
+            matches = [min(matches, key=lambda m: (len(m['placeId']), m['placeId']))]
     result = {'status': 'no_unique_match', 'candidateCount': len(candidates)}
-    if truncated:
+    if truncated and not exact:
         result['status'] = 'truncated_review'
     elif len(matches) > 1:
         result['status'] = 'ambiguous_review'
     elif len(matches) == 1:
         result.update(status='matched', match=matches[0])
+        if duplicate_ids:
+            result['duplicateListingsCollapsed'] = duplicate_ids
+        result['searchLimited'] = truncated
         result['coordinateDifferenceM'] = distance((facility['longitude'], facility['latitude']),
                                                   (matches[0]['longitude'], matches[0]['latitude']))
         result['largeDifferenceReview'] = result['coordinateDifferenceM'] is not None and result['coordinateDifferenceM'] > 100
@@ -223,7 +295,7 @@ def reject_reused_places(results):
             linked[result['match']['placeId']].append(result)
     for group in linked.values():
         if len(group) > 1:
-            score = lambda result: (bool(result['match'].get('sameBuilding')), name_strength(result['match']))
+            score = lambda result: (bool(result['match'].get('sameBuilding')), *identity_strength(result['match']))
             best = max(score(result) for result in group)
             strongest = [result for result in group if score(result) == best]
             winner = strongest[0] if len(strongest) == 1 else None
@@ -348,7 +420,7 @@ def run(args):
     manifest = {'version': VERSION, 'hiraAsOf': as_of, 'inputSha256': digest,
                 'matchingVersion': MATCHING_VERSION, 'telephoneRequired': False,
                 'nameNormalization': 'clinic_suffix_location_word_order_optional_same_building_branch',
-                'administrativeTransitions': {'인천 서구': ['인천 서해구', '인천 검단구']},
+                'administrativeTransitions': {'인천 서구': ['인천 서해구', '인천 검단구'], '인천 동구': ['인천 제물포구'], '인천 중구': ['인천 제물포구', '인천 영종구']},
                 'addressPriority': 'kakao_after_unique_identity_match',
                 'facilities': len(facilities), 'priority': ['kakao_matched', 'hira_unverified'],
                 'endpoint': ENDPOINT, 'mode': 'collect' if args.collect else 'prepare',
@@ -414,6 +486,10 @@ def run(args):
                'kakaoAddressPriorityMatches': sum(r['status'] == 'matched' and r['match']['addressPriorityApplied'] for r in results),
                'reorderedOrBranchMatches': sum(r['status'] == 'matched' and r['match']['nameEvidence'] != 'normalized_exact' for r in results),
                'administrativeTransitionMatches': sum(r['status'] == 'matched' and r['match']['administrativeTransition'] for r in results),
+               'phoneticMatches': sum(r['status'] == 'matched' and r['match']['nameEvidence'] == 'phonetic_or_bilingual_name' for r in results),
+               'categoryCorroboratedMatches': sum(r['status'] == 'matched' and r['match']['categoryCorroboratedByNameAndAddress'] for r in results),
+               'limitedSearchExactAddressMatches': sum(r['status'] == 'matched' and r.get('searchLimited', False) for r in results),
+               'duplicateListingMatches': sum(r['status'] == 'matched' and bool(r.get('duplicateListingsCollapsed')) for r in results),
                'stopped': stopped, 'complete': all(r['status'] != 'not_queried' for r in results),
                'nationalCompletenessVerified': False}
     save_json(out / 'audit.json', results)

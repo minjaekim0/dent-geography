@@ -1,5 +1,5 @@
 import {ageCount,metricValue,areaKm2,polygons,isLocal,ageLabel,SEXES,COLORS,thresholds,color,populationChange,changeColor,changeScale} from './population-model.mjs?v=gradient-1';
-import {createAdminHistory} from './admin-history-model.mjs?v=incheon-split-2';
+import {createAdminHistory} from './admin-history-model.mjs?v=incheon-full-3';
 
 const $=selector=>document.querySelector(selector);
 const fmt=(n,d=0)=>n==null||!Number.isFinite(n)?'자료 없음':n.toLocaleString('ko-KR',{maximumFractionDigits:d});
@@ -321,7 +321,7 @@ $('#download').onclick=()=>{
 };
 async function init(){
   try{
-    const [metadata,registry]=await Promise.all([getJSON('data/population/manifest.json'),getJSON('data/admin-history.json?v=incheon-split-2')]);
+    const [metadata,registry]=await Promise.all([getJSON('data/population/manifest.json'),getJSON('data/admin-history.json?v=incheon-full-3')]);
     manifest=metadata;admin=createAdminHistory(registry);
     if(!manifest.periods?.length)throw Error('등록된 인구 자료가 없습니다.');
     $('#period').replaceChildren(...manifest.periods.map(p=>new Option(periodLabel(p.period),p.period)));

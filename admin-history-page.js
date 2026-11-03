@@ -1,6 +1,6 @@
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 try{
-  const response=await fetch('data/admin-history.json?v=incheon-split-2');if(!response.ok)throw Error(response.status);
+  const response=await fetch('data/admin-history.json?v=incheon-full-3');if(!response.ok)throw Error(response.status);
   const data=await response.json(),query=document.querySelector('#history-query');
   function render(){
     const q=query.value.trim();let total=0;

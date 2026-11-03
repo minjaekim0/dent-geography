@@ -38,7 +38,14 @@ def extend_incheon_registry(registry, project):
     event['title'] = '인천 제물포구·영종구·서해구·검단구 개편 · 기존 행정동 코드 연결'
     event['splits'] = [{'before': '2826000000', 'beforeName': '인천광역시 서구',
                         'after': [{'code': '2827500000', 'name': '인천광역시 서해구'},
-                                  {'code': '2829000000', 'name': '인천광역시 검단구'}], 'source': SOURCE}]
+                                  {'code': '2829000000', 'name': '인천광역시 검단구'}], 'source': SOURCE},
+                       {'before': '2811000000', 'beforeName': '인천광역시 중구',
+                        'after': [{'code': '2812500000', 'name': '인천광역시 제물포구'},
+                                  {'code': '2815500000', 'name': '인천광역시 영종구'}],
+                        'boundaryLabel': '개편 전 경계', 'source': 'https://www.incheon.go.kr/IC01070101'},
+                       {'before': '2814000000', 'beforeName': '인천광역시 동구',
+                        'after': [{'code': '2812500000', 'name': '인천광역시 제물포구'}],
+                        'boundaryLabel': '개편 전 경계', 'source': 'https://www.incheon.go.kr/IC01070101'}]
     registry['events'].append({'id': 'incheon-seohae', 'effective': '2026-07-01',
                                'title': '인천 서구 → 서해구 행정동 연결 (동일 경계 15개 · 경계 변경 1개 보류)',
                                'kind': 'transfer', 'source': SOURCE, 'pairs': pairs,

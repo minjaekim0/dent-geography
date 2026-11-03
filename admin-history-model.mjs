@@ -63,7 +63,7 @@ export function createRegionLabeler(history){
   const names=new Map();
   const splits=new Map();
   for(const e of history.registry.events){
-    for(const split of e.splits||[])splits.set(compactName(split.beforeName),split.after.map(p=>p.name.split(' ').at(-1)).join('·'));
+    for(const split of e.splits||[])splits.set(compactName(split.beforeName),{names:split.after.map(p=>p.name.split(' ').at(-1)).join('·'),note:split.boundaryLabel||'분구 전 경계'});
     for(const p of e.pairs)names.set(history.nameKey(p.afterName),p.afterName);
     for(const p of e.names||[])names.set(history.nameKey(p[1]),p[1]);
   }
@@ -71,7 +71,7 @@ export function createRegionLabeler(history){
   return name=>{
     const qualified=name.replace(/^([^ ]+) /,(match,p)=>provinces[p]?provinces[p]+' ':match);
     const successors=splits.get(compactName(qualified));
-    if(successors)return `인천광역시 ${successors} (원자료: ${name} · 분구 전 경계)`;
+    if(successors)return `인천광역시 ${successors.names} (원자료: ${name} · ${successors.note})`;
     const current=names.get(history.nameKey(qualified));
     return current&&compactName(current)!==compactName(qualified)?`${current} (원자료: ${name})`:name;
   };

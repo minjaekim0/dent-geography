@@ -103,6 +103,9 @@ test('main dental labels resolve province abbreviations without conflating diffe
   assert.equal(label('경북 군위군'),'대구광역시 군위군 (원자료: 경북 군위군)');
   assert.equal(label('충북 청주시'),'충북 청주시');
   assert.equal(label('인천 서구'),'인천광역시 서해구·검단구 (원자료: 인천 서구 · 분구 전 경계)');
+  assert.equal(label('인천 동구'),'인천광역시 제물포구 (원자료: 인천 동구 · 개편 전 경계)');
+  assert.equal(label('인천 중구'),'인천광역시 제물포구·영종구 (원자료: 인천 중구 · 개편 전 경계)');
+  assert.notEqual(h.code('2814000000'),h.code('2812500000'));
   assert.equal(h.code('2826000000'),'2826000000');
   assert.notEqual(h.code('2827500000'),h.code('2829000000'));
   assert.equal(h.code('2826053000'),'2827553000');

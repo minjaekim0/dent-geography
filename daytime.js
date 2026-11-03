@@ -1,6 +1,6 @@
 import {PROVINCES,observation,metricValue,difference,regionKey} from './daytime-model.mjs';
 import {polygons,changeColor,changeScale,COLORS} from './population-model.mjs?v=gradient-1';
-import {createAdminHistory,censusComparable} from './admin-history-model.mjs?v=incheon-split-2';
+import {createAdminHistory,censusComparable} from './admin-history-model.mjs?v=incheon-full-3';
 const $=s=>document.querySelector(s),fmt=(v,d=0)=>v==null?'자료 없음':v.toLocaleString('ko-KR',{maximumFractionDigits:d});
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const signed=v=>v==null?'비교 불가':`${v>0?'+':''}${fmt(v)}`;
@@ -117,7 +117,7 @@ window.addEventListener('message',e=>{if(e.origin===location.origin&&e.source===
 new ResizeObserver(()=>{clearTimeout(resize);resize=setTimeout(report,80);}).observe($('main'));
 async function init(){
   try{
-    const [stats,registry]=await Promise.all([json('data/daytime-history.json'),json('data/admin-history.json?v=incheon-split-2')]);
+    const [stats,registry]=await Promise.all([json('data/daytime-history.json'),json('data/admin-history.json?v=incheon-full-3')]);
     dataset=stats;admin=createAdminHistory(registry);
     for(const y of dataset.years){
       byYear[y]=new Map(Object.entries(dataset.periods[y].records).map(([code,r])=>[admin.nameKey(r.fullName),{...r,sourceCode:code}]));
