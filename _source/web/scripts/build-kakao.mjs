@@ -86,7 +86,7 @@ const mapToolbar = `
   <label for="clinic-source" class="sr-only">치과 좌표 출처 선택</label><select id="clinic-source"><option value="all">모든 치과 위치</option><option value="kakao">카카오 연결 위치만</option><option value="hira_unverified">심평원 위치만</option></select>
   <span class="clinic-key"><i class="clinic-dot kakao"></i>카카오 <i class="clinic-dot hira"></i>심평원(연결 보류)</span>
   <span id="clinic-status" role="status">치과 위치를 불러오는 중입니다…</span>
-  <small>기관 목록 2026.06 · 카카오 조회 2026.11.03 · 대학·부속 포함 전체 위치(통계 집계 범위와 다름) · 좌표 없는 3곳 제외</small></div>
+  <small>기관 목록 2026.06 · 카카오 조회 2026.11.03 · 대학·부속 포함 전체 위치(통계 집계 범위와 다름) · 좌표 미확인 기관 제외</small></div>
   <div id="search-results" hidden aria-live="polite"></div>
 </section>
 `;

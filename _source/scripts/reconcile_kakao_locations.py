@@ -1,0 +1,369 @@
+"""Match current HIRA dental facilities to Kakao places without changing source DB."""
+from __future__ import annotations
+
+import argparse
+import csv
+import hashlib
+import json
+import math
+import os
+import re
+import sqlite3
+import threading
+import time
+import unicodedata
+import urllib.error
+import urllib.parse
+import urllib.request
+from collections import Counter, defaultdict
+from concurrent.futures import ThreadPoolExecutor, as_completed
+from datetime import datetime, timezone
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parents[1]
+ENDPOINT = 'https://dapi.kakao.com/v2/local/search/keyword.json'
+VERSION = 1
+MATCHING_VERSION = 3
+
+
+def compact(value):
+    return re.sub(r'[^가-힣a-z0-9]', '', unicodedata.normalize('NFKC', value or '').casefold())
+
+
+def dental_name(value):
+    """Allow the optional clinic suffix while preserving brand and branch names."""
+    return re.sub(r'치과의원$', '치과', compact(value))
+
+
+def building(value):
+    """Conservative road-address building key; no fuzzy or substring matching."""
+    text = unicodedata.normalize('NFKC', value or '').strip()
+    aliases = {'서울특별시': '서울', '부산광역시': '부산', '대구광역시': '대구',
+               '인천광역시': '인천', '광주광역시': '광주', '대전광역시': '대전',
+               '울산광역시': '울산', '세종특별자치시': '세종', '경기도': '경기',
+               '강원특별자치도': '강원', '강원도': '강원', '충청북도': '충북',
+               '충청남도': '충남', '전북특별자치도': '전북', '전라북도': '전북',
+               '전라남도': '전남', '경상북도': '경북', '경상남도': '경남',
+               '제주특별자치도': '제주'}
+    parts = text.split()
+    if parts:
+        parts[0] = aliases.get(parts[0], parts[0])
+    text = ' '.join(parts)
+    # Keep province, municipality, road and exact main/sub building number.
+    match = re.match(r'^(.+?(?:대로|로|길))\s+(\d+(?:-\d+)?)(?=$|[\s,(])', text)
+    return compact(match.group(1)) + ':' + match.group(2) if match else None
+
+
+def valid_point(lon, lat):
+    try:
+        return math.isfinite(float(lon)) and math.isfinite(float(lat)) and 124 <= float(lon) <= 132 and 33 <= float(lat) <= 39.5
+    except (ValueError, TypeError):
+        return False
+
+
+def distance(a, b):
+    if not valid_point(a[0], a[1]) or not valid_point(b[0], b[1]):
+        return None
+    lon1, lat1, lon2, lat2 = map(math.radians, map(float, (*a, *b)))
+    h = math.sin((lat2-lat1)/2)**2 + math.cos(lat1)*math.cos(lat2)*math.sin((lon2-lon1)/2)**2
+    return round(6371000 * 2 * math.asin(min(1, math.sqrt(h))), 1)
+
+
+def locality(address):
+    """Compare municipality context without requiring the same street/building."""
+    parts = (address or '').split()
+    if len(parts) < 2:
+        return None
+    province = {'서울특별시': '서울', '부산광역시': '부산', '대구광역시': '대구',
+                '인천광역시': '인천', '광주광역시': '광주', '대전광역시': '대전',
+                '울산광역시': '울산', '세종특별자치시': '세종', '경기도': '경기',
+                '강원도': '강원', '강원특별자치도': '강원', '충청북도': '충북',
+                '충청남도': '충남', '전라북도': '전북', '전북특별자치도': '전북',
+                '전라남도': '전남', '경상북도': '경북', '경상남도': '경남',
+                '제주특별자치도': '제주'}.get(parts[0], parts[0])
+    if province == '세종':
+        return (province,)
+    if not parts[1].endswith(('시', '군', '구')):
+        return None
+    municipality = parts[1:3] if len(parts) > 2 and parts[1].endswith('시') and parts[2].endswith('구') else parts[1:2]
+    return (province, *municipality)
+
+
+def decide(facility, documents, truncated=False):
+    candidates = {str(d['id']): d for d in documents if d.get('id')}
+    matches = []
+    for place_id, d in candidates.items():
+        if '치과' not in d.get('category_name', ''):
+            continue
+        if not dental_name(facility['name']) or dental_name(facility['name']) != dental_name(d.get('place_name')):
+            continue
+        if not valid_point(d.get('x'), d.get('y')):
+            continue
+        # Telephone agreement is diagnostic only, per the user's preference.
+        hira_phone = re.sub(r'\D', '', facility.get('phone') or '')
+        kakao_phone = re.sub(r'\D', '', d.get('phone') or '')
+        selected_address = d.get('road_address_name') or d.get('address_name') or ''
+        same_building = bool(building(facility['address']) and building(facility['address']) == building(d.get('road_address_name')))
+        same_locality = bool(locality(facility['address']) and locality(facility['address']) == locality(selected_address))
+        if not same_building and not same_locality:
+            continue
+        matches.append({'placeId': place_id, 'longitude': float(d['x']), 'latitude': float(d['y']),
+                        'placeName': d['place_name'], 'roadAddress': d.get('road_address_name'),
+                        'selectedAddress': selected_address, 'sameBuilding': same_building,
+                        'sameLocality': same_locality, 'addressPriorityApplied': not same_building,
+                        'placeUrl': d.get('place_url'),
+                        'evidence': ('exact_name_and_road_building' if compact(facility['name']) == compact(d.get('place_name'))
+                                     else 'optional_clinic_suffix_and_road_building') if same_building
+                                    else 'unique_name_in_municipality_kakao_address_priority',
+                        'telephoneAgrees': bool(hira_phone and hira_phone == kakao_phone)})
+    # Exact building matches disambiguate common names. Otherwise accept one
+    # normalized-name candidate in the same municipality, using its Kakao address.
+    exact = [match for match in matches if match['sameBuilding']]
+    if exact:
+        matches = exact
+    result = {'status': 'no_unique_match', 'candidateCount': len(candidates)}
+    if truncated:
+        result['status'] = 'truncated_review'
+    elif len(matches) > 1:
+        result['status'] = 'ambiguous_review'
+    elif len(matches) == 1:
+        result.update(status='matched', match=matches[0])
+        result['coordinateDifferenceM'] = distance((facility['longitude'], facility['latitude']),
+                                                  (matches[0]['longitude'], matches[0]['latitude']))
+        result['largeDifferenceReview'] = result['coordinateDifferenceM'] is not None and result['coordinateDifferenceM'] > 100
+    return result
+
+
+def reject_reused_places(results):
+    linked = defaultdict(list)
+    for result in results:
+        if result['status'] == 'matched':
+            linked[result['match']['placeId']].append(result)
+    for group in linked.values():
+        if len(group) > 1:
+            exact = [result for result in group if result['match'].get('sameBuilding')]
+            winner = exact[0] if len(exact) == 1 else None
+            for result in group:
+                if result is not winner:
+                    result['status'] = 'place_reused_review'
+
+
+def selected_point(facility, result):
+    if result['status'] == 'matched':
+        m = result['match']
+        return [m['longitude'], m['latitude']], 'kakao'
+    if valid_point(facility['longitude'], facility['latitude']):
+        return [facility['longitude'], facility['latitude']], 'hira_unverified'
+    return None, 'unlocated'
+
+
+def load_facilities(db):
+    con = sqlite3.connect(f'file:{db.resolve()}?mode=ro', uri=True)
+    con.row_factory = sqlite3.Row
+    try:
+        as_of = con.execute("SELECT max(observed_at) FROM raw_files WHERE source LIKE 'hira_snapshot_%'").fetchone()[0]
+        if not as_of:
+            raise ValueError('No HIRA snapshot available')
+        rows = con.execute("""SELECT facility_key, name, address, latitude, longitude, raw_json
+            FROM facilities WHERE last_seen=? AND status='OPEN'
+            AND facility_type IN ('DENTAL_CLINIC','DENTAL_HOSPITAL') ORDER BY facility_key""", (as_of,)).fetchall()
+        facilities = []
+        for row in rows:
+            item = dict(row)
+            raw = json.loads(item.pop('raw_json'))
+            item['phone'] = raw.get('전화번호', '')
+            item['kind'] = raw.get('종별코드명', '')
+            facilities.append(item)
+        return as_of, facilities
+    finally:
+        con.close()
+
+
+def api_key():
+    values = {}
+    path = ROOT / '.env'
+    if path.exists():
+        for line in path.read_text().splitlines():
+            name, sep, value = line.strip().removeprefix('export ').partition('=')
+            if sep and name == 'KAKAO_REST_API_KEY':
+                values[name] = value.strip().strip('\"\'')
+    return os.environ.get('KAKAO_REST_API_KEY') or values.get('KAKAO_REST_API_KEY')
+
+
+def request_page(query, page, key, timeout):
+    params = {'query': query, 'page': page, 'size': 15}
+    req = urllib.request.Request(ENDPOINT + '?' + urllib.parse.urlencode(params),
+                                 headers={'Authorization': 'KakaoAK ' + key})
+    try:
+        with urllib.request.urlopen(req, timeout=timeout) as response:
+            body = response.read()
+        if key.encode() in body:
+            raise RuntimeError('Credential echoed by server; response discarded')
+        data = json.loads(body)
+        if not isinstance(data.get('documents'), list) or not isinstance(data.get('meta'), dict):
+            raise ValueError('Unexpected response')
+        return data
+    except urllib.error.HTTPError as exc:
+        raise RuntimeError(f'Kakao HTTP {exc.code}; stopped, response suppressed') from None
+    except Exception:
+        raise RuntimeError('Kakao request failed; stopped, response suppressed') from None
+
+
+def save_json(path, value):
+    temp = path.with_suffix(path.suffix + '.tmp')
+    temp.write_text(json.dumps(value, ensure_ascii=False, indent=2, allow_nan=False) + '\n')
+    temp.replace(path)
+
+
+def collect_one(f, key, folder, budget, delay, timeout):
+    # No radius anchored to HIRA coordinates: those coordinates are being checked.
+    locality = ' '.join((f['address'] or '').split()[:2])
+    query = f"{locality} {f['name']}"
+    fingerprint = hashlib.sha256(json.dumps([VERSION, f, query], ensure_ascii=False, sort_keys=True).encode()).hexdigest()
+    path = folder / (fingerprint + '.json')
+    if path.exists():
+        cached = json.loads(path.read_text())
+        if cached.get('fingerprint') != fingerprint:
+            raise RuntimeError('Cache identity mismatch')
+        return decide(f, cached['documents'], cached['truncated']), cached['queriedAt']
+    documents = []
+    observed = datetime.now(timezone.utc).isoformat()
+    truncated = False
+    # Complete all exposed pages. Do not cache a partial result when budget stops.
+    for page in range(1, 4):
+        with budget.get('lock', threading.Lock()):
+            if budget.get('stopped'):
+                raise RuntimeError(budget['stopped'])
+            if budget['remaining'] <= 0:
+                raise RuntimeError('Request budget exhausted; resume the same output folder')
+            if budget['used']:
+                time.sleep(delay)
+            budget['remaining'] -= 1
+            budget['used'] += 1
+        data = request_page(query, page, key, timeout)
+        documents.extend(data['documents'])
+        meta = data['meta']
+        truncated = meta.get('total_count', 0) > meta.get('pageable_count', 0)
+        if meta.get('is_end'):
+            break
+    else:
+        truncated = True
+    # Keep only the documented place fields; credentials are never persisted.
+    fields = ('id', 'place_name', 'category_name', 'road_address_name', 'address_name', 'phone', 'x', 'y', 'place_url')
+    documents = [{k: d[k] for k in fields if k in d} for d in documents]
+    save_json(path, {'fingerprint': fingerprint, 'query': query, 'queriedAt': observed,
+                     'documents': documents, 'truncated': truncated})
+    return decide(f, documents, truncated), observed
+
+
+def run(args):
+    as_of, facilities = load_facilities(args.db)
+    digest = hashlib.sha256(json.dumps(facilities, sort_keys=True, ensure_ascii=False).encode()).hexdigest()
+    out = args.output
+    out.mkdir(parents=True, exist_ok=True)
+    manifest = {'version': VERSION, 'hiraAsOf': as_of, 'inputSha256': digest,
+                'matchingVersion': MATCHING_VERSION, 'telephoneRequired': False,
+                'nameNormalization': 'optional_trailing_의원_after_치과',
+                'addressPriority': 'kakao_after_unique_identity_match',
+                'facilities': len(facilities), 'priority': ['kakao_matched', 'hira_unverified'],
+                'endpoint': ENDPOINT, 'mode': 'collect' if args.collect else 'prepare',
+                'nationalCompletenessVerified': False}
+    manifest_path = out / 'manifest.json'
+    if manifest_path.exists():
+        old = json.loads(manifest_path.read_text())
+        if old['inputSha256'] != digest or old['version'] != VERSION:
+            raise ValueError('Inputs changed; use a new output directory')
+        if old.get('mode') == 'collect' and not args.collect:
+            raise ValueError('Existing collection output; use --collect to resume or a different --output for preparation')
+    save_json(manifest_path, manifest)
+    save_json(out / 'input.json', facilities)
+    key = api_key() if args.collect else None
+    budget = {'remaining': args.max_requests, 'used': 0, 'lock': threading.Lock()}
+    cache = out / 'responses'
+    cache.mkdir(exist_ok=True)
+    results = [dict(status='not_queried', facilityKey=f['facility_key'], queriedAt=None) for f in facilities]
+    stopped = None
+    if args.collect and not key:
+        stopped = 'KAKAO_REST_API_KEY is not configured'
+    if args.collect and not stopped:
+        def task(index):
+            f = facilities[index]
+            try:
+                result, observed = collect_one(f, key, cache, budget, args.delay, args.timeout)
+                return index, dict(result, facilityKey=f['facility_key'], queriedAt=observed)
+            except RuntimeError as exc:
+                with budget['lock']:
+                    budget.setdefault('stopped', str(exc))
+                return index, results[index]
+        with ThreadPoolExecutor(max_workers=getattr(args, 'workers', 1)) as executor:
+            futures = [executor.submit(task, index) for index in range(len(facilities))]
+            for count, future in enumerate(as_completed(futures), 1):
+                index, result = future.result()
+                results[index] = result
+                if count % 500 == 0 and not budget.get('stopped'):
+                    print(json.dumps({'processed': count, 'total': len(facilities), 'requests': budget['used']}), flush=True)
+        stopped = budget.get('stopped')
+    reject_reused_places(results)
+    features = []
+    sources = Counter()
+    for f, result in zip(facilities, results):
+        coords, source = selected_point(f, result)
+        selected_address = result['match']['selectedAddress'] if source == 'kakao' else f['address']
+        sources[source] += 1
+        features.append({'type': 'Feature', 'geometry': {'type': 'Point', 'coordinates': coords} if coords else None,
+                         'properties': {'facilityKey': f['facility_key'], 'name': f['name'], 'address': selected_address,
+                                        'hiraAddress': f['address'], 'addressSource': 'kakao' if source == 'kakao' else 'hira',
+                                        'addressPriorityApplied': result.get('match', {}).get('addressPriorityApplied', False) if source == 'kakao' else False,
+                                        'kind': f['kind'], 'hiraAsOf': as_of, 'coordinateSource': source,
+                                        'matchStatus': result['status'], 'kakaoQueriedAt': result['queriedAt'],
+                                        'kakaoPlaceUrl': result.get('match', {}).get('placeUrl'),
+                                        'coordinateDifferenceM': result.get('coordinateDifferenceM'),
+                                        'largeDifferenceReview': result.get('largeDifferenceReview', False),
+                                        'physicalLocationVerified': False}})
+    summary = {'facilities': len(facilities), 'hiraAsOf': as_of, 'requestsThisRun': budget['used'],
+               'matchingVersion': MATCHING_VERSION,
+               'statuses': dict(Counter(r['status'] for r in results)), 'coordinateSources': dict(sources),
+               'largeCoordinateDifferences': sum(r['status'] == 'matched' and r.get('largeDifferenceReview', False) for r in results),
+               'noSearchResults': sum(r.get('candidateCount') == 0 for r in results),
+               'kakaoAddressPriorityMatches': sum(r['status'] == 'matched' and r['match']['addressPriorityApplied'] for r in results),
+               'stopped': stopped, 'complete': all(r['status'] != 'not_queried' for r in results),
+               'nationalCompletenessVerified': False}
+    save_json(out / 'audit.json', results)
+    save_json(out / 'current-clinics.geojson', {'type': 'FeatureCollection', 'features': features})
+    with (out / 'review.csv').open('w', encoding='utf-8-sig', newline='') as handle:
+        writer = csv.writer(handle)
+        status_labels = {'matched': '자동 연결', 'no_unique_match': '연결 보류',
+                         'truncated_review': '검색 결과 제한 검토', 'ambiguous_review': '복수 후보 검토',
+                         'place_reused_review': '기관 간 장소 중복 검토', 'not_queried': '미조회'}
+        source_labels = {'kakao': '카카오', 'hira_unverified': '심평원(미검증)', 'unlocated': '좌표 없음'}
+        writer.writerow(['기관명', '심평원 주소', '선택 주소', '주소 출처', '주소 차이 카카오 우선', '연결 상태', '좌표 출처', '심평원 경도', '심평원 위도',
+                         '선택 경도', '선택 위도', '좌표 차이(m)', '100m 초과 검토', '카카오 장소', '조회일'])
+        for f, result, feature in zip(facilities, results, features):
+            coords = feature['geometry']['coordinates'] if feature['geometry'] else [None, None]
+            writer.writerow([f['name'], f['address'], feature['properties']['address'], feature['properties']['addressSource'],
+                             '적용' if feature['properties']['addressPriorityApplied'] else '', status_labels[result['status']], source_labels[feature['properties']['coordinateSource']],
+                             f['longitude'], f['latitude'], *coords, result.get('coordinateDifferenceM'),
+                             '필요' if result.get('largeDifferenceReview', False) else '', result.get('match', {}).get('placeUrl'),
+                             result['queriedAt']])
+    save_json(out / 'summary.json', summary)
+    print(json.dumps(summary, ensure_ascii=False, indent=2))
+    return 2 if stopped else 0
+
+
+def main():
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('--db', type=Path, default=ROOT / 'data/processed/dent_geography.sqlite')
+    parser.add_argument('--output', type=Path, default=ROOT / 'data/processed/kakao-reconciliation/current')
+    parser.add_argument('--collect', action='store_true')
+    parser.add_argument('--max-requests', type=int, default=100)
+    parser.add_argument('--delay', type=float, default=0.3)
+    parser.add_argument('--timeout', type=float, default=20)
+    parser.add_argument('--workers', type=int, default=1)
+    args = parser.parse_args()
+    if args.max_requests < 1 or args.delay < 0 or args.timeout <= 0 or not 1 <= args.workers <= 16:
+        parser.error('Invalid request budget, delay or timeout')
+    raise SystemExit(run(args))
+
+
+if __name__ == '__main__':
+    main()

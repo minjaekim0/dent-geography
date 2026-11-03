@@ -192,7 +192,7 @@ margin-left:0}}
   <label for="clinic-source" class="sr-only">치과 좌표 출처 선택</label><select id="clinic-source"><option value="all">모든 치과 위치</option><option value="kakao">카카오 연결 위치만</option><option value="hira_unverified">심평원 위치만</option></select>
   <span class="clinic-key"><i class="clinic-dot kakao"></i>카카오 <i class="clinic-dot hira"></i>심평원(연결 보류)</span>
   <span id="clinic-status" role="status">치과 위치를 불러오는 중입니다…</span>
-  <small>기관 목록 2026.06 · 카카오 조회 2026.11.03 · 대학·부속 포함 전체 위치(통계 집계 범위와 다름) · 좌표 없는 3곳 제외</small></div>
+  <small>기관 목록 2026.06 · 카카오 조회 2026.11.03 · 대학·부속 포함 전체 위치(통계 집계 범위와 다름) · 좌표 미확인 기관 제외</small></div>
   <div id="search-results" hidden aria-live="polite"></div>
 </section>
 <section id="population-panel" hidden aria-label="인구 분포 지도 지표"><p id="population-panel-status" role="status">인구 지도를 불러오는 중입니다. <a href="population.html">별도 화면으로 열기</a></p><iframe id="population-frame" title="연령·성별·연도별 읍면동 인구 분포" data-src="population.html?embed=1"></iframe></section><section id="population-change-panel" hidden aria-label="인구 증감 지도 지표"><p id="population-change-panel-status" role="status">인구 증감을 불러오는 중입니다. <a href="population.html?mode=change">별도 화면으로 열기</a></p><iframe id="population-change-frame" title="연령·성별·기간별 읍면동 인구 증감" data-src="population.html?embed=1&amp;mode=change"></iframe></section><section id="daytime-panel" hidden aria-label="공식 주간인구 지도 지표"><p id="daytime-panel-status" role="status">공식 주간인구를 불러오는 중입니다. <a href="daytime.html">별도 화면으로 열기</a></p><iframe id="daytime-frame" title="조사연도별 시군구 공식 주간인구" data-src="daytime.html?embed=1"></iframe></section><section id="daytime-change-panel" hidden aria-label="공식 주간인구 증감 지도 지표"><p id="daytime-change-panel-status" role="status">주간인구 증감을 불러오는 중입니다. <a href="daytime.html?mode=change">별도 화면으로 열기</a></p><iframe id="daytime-change-frame" title="연령·성별·조사기간별 시군구 주간인구 증감" data-src="daytime.html?embed=1&amp;mode=change"></iframe></section><section id="district" class="layout"><div id="map" class="map"></div><aside><div class="metric"><span>분석 시군구</span><strong id="district-count">–</strong></div><div class="metric"><span id="district-label">치과기관 합계</span><strong id="district-total">–</strong></div><div class="metric"><span id="district-rate-label">전국 평균 · 주민등록 인구 1만 명당</span><strong id="district-rate">–</strong></div><h2 id="district-title">주민등록 인구 대비 치과기관 수 상위 10곳</h2><ol id="district-ranking"></ol></aside></section>
@@ -209,5 +209,5 @@ margin-left:0}}
 <script type="module" src="admin-map-labels.js?v=admin-1"></script>
 <script src="kakao-population-panel.js?v=703c0d84075e"></script>
 <script src="kakao-core.js?v=07f60ffafe8d"></script>
-<script type="module" src="kakao-clinics.js?v=18d6d226a539"></script>
+<script type="module" src="kakao-clinics.js?v=3bd317364574"></script>
 </body></html>
