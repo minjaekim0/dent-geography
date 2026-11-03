@@ -4,6 +4,7 @@
  */
 'use strict';
 const kakaoControllers = new Map();
+globalThis.clinicMapControllers = kakaoControllers;
 let kakaoReady;
 let fillOpacity = .65;
 let pickerFeatures;
@@ -12,7 +13,7 @@ let searchSequence = 0;
 function loadKakao() {
   if (kakaoReady) return kakaoReady;
   kakaoReady = new Promise((resolve, reject) => {
-    if (window.kakao?.maps?.Map && window.kakao.maps.services) { resolve(); return; }
+    if (window.kakao?.maps?.Map && window.kakao.maps.services && window.kakao.maps.MarkerClusterer) { resolve(); return; }
     let settled = false;
     const finish = error => {
       if (settled) return;
@@ -22,7 +23,7 @@ function loadKakao() {
     };
     const timer = setTimeout(() => finish(new Error('지도 연결 시간이 초과되었습니다.')), 20000);
     const script = document.createElement('script');
-    script.src = 'https://dapi.kakao.com/v2/maps/sdk.js?appkey=440a28249d3bdcd6a1d191a152435823&autoload=false&libraries=services';
+    script.src = 'https://dapi.kakao.com/v2/maps/sdk.js?appkey=440a28249d3bdcd6a1d191a152435823&autoload=false&libraries=services,clusterer';
     script.onerror = () => finish(new Error('카카오 지도를 불러오지 못했습니다.'));
     script.onload = () => {
       if (!window.kakao?.maps?.load) { finish(new Error('지도 서비스 설정을 확인해 주세요.')); return; }
@@ -211,6 +212,7 @@ class KakaoAnalysisMap {
     this.homeLevel = this.map.getLevel(); this.updateZoom(); this.schedule();
   }
   suspend() {
+    globalThis.clinicLayer?.clear(this);
     this.revision++;
     if (this.frame !== null) cancelAnimationFrame(this.frame);
     this.frame = null; this.hideTip();
@@ -275,6 +277,7 @@ class KakaoAnalysisMap {
     if (!part.attached) { part.shape.setMap(this.map); part.attached = true; }
   }
   renderVisible() {
+    globalThis.clinicLayer?.render(this);
     const revision = this.revision, bounds = this.viewport();
     const work = [];
     for (const [parts,context] of [[this.parts,false],[this.contextParts,true]]) {
