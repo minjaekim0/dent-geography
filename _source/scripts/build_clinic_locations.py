@@ -31,7 +31,23 @@ def main():
               'locations': rows}
     target = ROOT / 'web/dist/data/current-clinics.json'
     target.write_text(json.dumps(result, ensure_ascii=False, separators=(',', ':')))
-    print(json.dumps({'located': len(rows), 'unlocated': missing, 'bytes': target.stat().st_size}))
+    version = hashlib.sha256(target.read_bytes()).hexdigest()[:12]
+    details = target.parent / 'clinic-details'
+    details.mkdir(exist_ok=True)
+    chunks, index_rows = [], []
+    for start in range(0, len(rows), 500):
+        filename = f'{start // 500:03}.json'
+        chunks.append('clinic-details/' + filename)
+        subset = rows[start:start + 500]
+        (details / filename).write_text(json.dumps({r['id']: r for r in subset}, ensure_ascii=False, separators=(',', ':')))
+        for r in subset:
+            index_rows.append([r['id'], r['name'], r['lng'], r['lat'], 1 if r['source'] == 'kakao' else 0, start // 500])
+    index = {k: v for k, v in result.items() if k != 'locations'}
+    index.update(formatVersion=1, dataVersion=version, detailChunks=chunks, locations=index_rows)
+    index_path = target.parent / 'current-clinics-index.json'
+    index_path.write_text(json.dumps(index, ensure_ascii=False, separators=(',', ':')))
+    print(json.dumps({'located': len(rows), 'unlocated': missing, 'fullBytes': target.stat().st_size,
+                      'initialIndexBytes': index_path.stat().st_size, 'detailChunks': len(chunks)}))
 
 if __name__ == '__main__':
     main()

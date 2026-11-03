@@ -13,7 +13,7 @@ let searchSequence = 0;
 function loadKakao() {
   if (kakaoReady) return kakaoReady;
   kakaoReady = new Promise((resolve, reject) => {
-    if (window.kakao?.maps?.Map && window.kakao.maps.services && window.kakao.maps.MarkerClusterer) { resolve(); return; }
+    if (window.kakao?.maps?.Map && window.kakao.maps.services) { resolve(); return; }
     let settled = false;
     const finish = error => {
       if (settled) return;
@@ -23,7 +23,7 @@ function loadKakao() {
     };
     const timer = setTimeout(() => finish(new Error('지도 연결 시간이 초과되었습니다.')), 20000);
     const script = document.createElement('script');
-    script.src = 'https://dapi.kakao.com/v2/maps/sdk.js?appkey=440a28249d3bdcd6a1d191a152435823&autoload=false&libraries=services,clusterer';
+    script.src = 'https://dapi.kakao.com/v2/maps/sdk.js?appkey=440a28249d3bdcd6a1d191a152435823&autoload=false&libraries=services';
     script.onerror = () => finish(new Error('카카오 지도를 불러오지 못했습니다.'));
     script.onload = () => {
       if (!window.kakao?.maps?.load) { finish(new Error('지도 서비스 설정을 확인해 주세요.')); return; }
@@ -264,8 +264,10 @@ class KakaoAnalysisMap {
     this.tip.style.top = Math.max(8,Math.min(point.y+12,this.el.clientHeight-this.tip.offsetHeight-35))+'px';
   }
   attachPolygon(part, context) {
+    const options = this.options(part,context), style = JSON.stringify(options);
     if (!part.shape) {
-      part.shape = new kakao.maps.Polygon({path:kakaoPath(part.rings),...this.options(part,context)});
+      part.shape = new kakao.maps.Polygon({path:kakaoPath(part.rings),...options});
+      part.style = style;
       this.cache.add(part);
       if (!context) {
         kakao.maps.event.addListener(part.shape,'click',() => this.select(String(part.feature.properties.code)));
@@ -273,7 +275,7 @@ class KakaoAnalysisMap {
         kakao.maps.event.addListener(part.shape,'mouseout',() => this.hideTip());
       }
     }
-    part.shape.setOptions(this.options(part,context));
+    if (part.style !== style) { part.shape.setOptions(options); part.style = style; }
     if (!part.attached) { part.shape.setMap(this.map); part.attached = true; }
   }
   renderVisible() {

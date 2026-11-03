@@ -93,7 +93,7 @@ test('period clamping and 3/5/10-year windows retain their boundary behavior',()
 function renderer() {
   const events=[];
   class LatLng {constructor(lat,lng){this.lat=lat;this.lng=lng}}
-  class Shape {constructor(options){this.options=options}setOptions(options){Object.assign(this.options,options)}setMap(map){this.map=map}}
+  class Shape {constructor(options){this.options=options}setOptions(options){this.updates=(this.updates||0)+1;Object.assign(this.options,options)}setMap(map){this.map=map}}
   const ctx=vm.createContext({document:{querySelector(){return {addEventListener(){}}}},Map,Set,console,performance,
     requestAnimationFrame:fn=>{fn();return 1},cancelAnimationFrame(){},
     kakao:{maps:{LatLng,Polygon:Shape,Polyline:Shape,event:{addListener(...args){events.push(args)}}}},
@@ -126,7 +126,9 @@ test('viewport culling preserves intersecting boundaries; colors update in place
   const part={feature:{properties:{code:'a',value:4}},rings:[[[127,37],[128,37],[127,38],[127,37]]],attached:false};
   controller.attachPolygon(part,false);const shape=part.shape;
   assert.equal(shape.options.strokeColor,'#ff9c24');assert.equal(shape.map,controller.map);assert.equal(events.length,3);
+  controller.attachPolygon(part,false);assert.equal(shape.updates||0,0,'unchanged pan must not restyle geometry');
   controller.state.selected=null;part.feature.properties.value=-4;controller.attachPolygon(part,false);
+  assert.equal(shape.updates,1,'a real metric/selection change must update the same shape');
   assert.equal(part.shape,shape);assert.equal(shape.options.fillColor,'color:-4/10');assert.equal(shape.options.strokeColor,'#8193a0');
 });
 
