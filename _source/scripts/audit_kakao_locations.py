@@ -5,7 +5,7 @@ import json
 from collections import Counter
 from pathlib import Path
 
-from reconcile_kakao_locations import ROOT, VERSION, name_match_evidence, compatible_locality, same_building_address, selected_point, valid_point, dental_place
+from reconcile_kakao_locations import ROOT, VERSION, name_match_evidence, compatible_locality, same_building_address, selected_point, valid_point, dental_place, place_evidence
 
 
 def audit(folder):
@@ -23,7 +23,8 @@ def audit(folder):
         fingerprint = hashlib.sha256(json.dumps([VERSION, f, query], ensure_ascii=False, sort_keys=True).encode()).hexdigest()
         response = json.loads((folder / 'responses' / (fingerprint + '.json')).read_text())
         assert response['fingerprint'] == fingerprint
-        docs = response['documents']
+        docs, observed = place_evidence(f, response)
+        assert r['queriedAt'] == observed
         coords, source = selected_point(f, r)
         assert source == feature['properties']['coordinateSource']
         assert coords == (feature['geometry']['coordinates'] if feature['geometry'] else None)

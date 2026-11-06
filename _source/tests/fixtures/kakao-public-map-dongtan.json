@@ -1,0 +1,38 @@
+{
+  "source": "kakao_map_public_ui",
+  "facilityKey": "a",
+  "verifiedAt": "2026-11-06T14:02:12.956637+00:00",
+  "detailUrl": "https://place.map.kakao.com/26416862",
+  "routeUrl": "https://map.kakao.com/?map_type=TYPE_MAP&target=car&rt=,,520034.99999999994,1020501.9999999995&rt1=&rt2=%EB%8F%99%ED%83%84%ED%9C%B4%EC%B9%98%EA%B3%BC%EC%9D%98%EC%9B%90&rtIds=,26416862",
+  "transform": {
+    "endpoint": "https://dapi.kakao.com/v2/local/geo/transcoord.json",
+    "input": {
+      "x": 520034.99999999994,
+      "y": 1020501.9999999995,
+      "input_coord": "WCONGNAMUL",
+      "output_coord": "WGS84"
+    },
+    "response": {
+      "meta": {
+        "total_count": 1
+      },
+      "documents": [
+        {
+          "x": 127.09023781321257,
+          "y": 37.1728614035725
+        }
+      ]
+    }
+  },
+  "document": {
+    "id": "26416862",
+    "place_name": "동탄휴치과의원",
+    "category_name": "의료,건강 > 병원 > 치과",
+    "road_address_name": "경기 화성시 동탄구 동탄기흥로 147-13",
+    "address_name": "경기 화성시 동탄구 방교동 829-4",
+    "x": "127.09023781321257",
+    "y": "37.1728614035725",
+    "place_url": "https://place.map.kakao.com/26416862"
+  },
+  "note": "카카오맵 검색·상세화면에서 이름과 건물 주소 일치 확인. Local REST 이름 검색 0건. 도착 버튼의 공개 길찾기 URL 좌표를 공식 REST 좌표계 변환으로 WGS84 변환. 원본 검색 응답은 보존."
+}

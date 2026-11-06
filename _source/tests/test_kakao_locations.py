@@ -220,6 +220,27 @@ class KakaoLocationTests(unittest.TestCase):
                     k.collect_one(facility(), 'secret', Path(tmp), {'used': 0, 'remaining': 1}, 0, 1)
             self.assertEqual(list(Path(tmp).glob('*.json')), [])
 
+    def test_public_map_evidence_preserves_empty_api_response_and_rechecks_identity(self):
+        evidence = json.loads((Path(__file__).parent / 'fixtures/kakao-public-map-dongtan.json').read_text())
+        f = facility(name='동탄휴치과의원', address='경기도 화성시 동탄구 동탄면 동탄기흥로 147-13, 304호')
+        response = {'documents': [], 'queriedAt': '2026-11-03T00:44:02+00:00', 'verifiedSupplements': [evidence]}
+        docs, observed = k.place_evidence(f, response)
+        self.assertEqual(response['documents'], [])
+        self.assertEqual(observed, evidence['verifiedAt'])
+        result = k.decide(f, docs)
+        self.assertEqual(result['status'], 'matched')
+        self.assertEqual(result['match']['placeId'], '26416862')
+        self.assertEqual(k.selected_point(f, result), ([127.09023781321257, 37.1728614035725], 'kakao'))
+        self.assertEqual(k.decide(facility(), docs)['status'], 'no_unique_match')
+        for field, value in [('facilityKey', 'other'), ('detailUrl', 'https://place.map.kakao.com/other')]:
+            changed = json.loads(json.dumps(response))
+            changed['verifiedSupplements'][0][field] = value
+            with self.assertRaises(ValueError):
+                k.place_evidence(f, changed)
+        evidence['document']['x'] = '128'
+        with self.assertRaises(ValueError):
+            k.place_evidence(f, response)
+
     def test_prepare_does_not_mutate_db_or_call_api(self):
         with tempfile.TemporaryDirectory() as tmp:
             db = Path(tmp) / 'source.sqlite'

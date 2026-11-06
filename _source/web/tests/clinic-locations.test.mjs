@@ -16,8 +16,8 @@ test('only real Kakao place links are clickable',()=>{
 test('public data exposes selected points and no original provider identifiers',()=>{
   const data=JSON.parse(read('../dist/data/current-clinics.json'));
   assert.equal(data.locations.length,19623);assert.equal(data.unlocated,1);
-  assert.equal(data.locations.filter(p=>p.source==='kakao').length,17771);
-  assert.equal(data.locations.filter(p=>p.source==='hira_unverified').length,1852);
+  assert.equal(data.locations.filter(p=>p.source==='kakao').length,17772);
+  assert.equal(data.locations.filter(p=>p.source==='hira_unverified').length,1851);
   assert.equal(new Set(data.locations.map(p=>p.id)).size,data.locations.length);
   assert.ok(data.locations.every(p=>p.lng>=124&&p.lng<=132&&p.lat>=33&&p.lat<=39.5));
   assert.doesNotMatch(JSON.stringify(data),/facilityKey|암호화요양기호|KAKAO_REST_API_KEY/);
@@ -49,4 +49,14 @@ test('relocated clinic publishes the Kakao address and coordinates together',()=
   assert.equal(clinic.address,'경기 의왕시 백운중앙로3길 7');
   assert.equal(clinic.lng,127.00291837354568);assert.equal(clinic.lat,37.37151397759283);
   assert.equal(clinic.addressPriorityApplied,true);
+});
+
+
+test('Dongtan Hyu uses the independently verified public Kakao place when REST search omits it',()=>{
+  const data=JSON.parse(read('../dist/data/current-clinics.json'));
+  const p=data.locations.find(p=>p.name==='동탄휴치과의원');
+  assert.equal(p.source,'kakao');assert.equal(p.placeUrl,'https://place.map.kakao.com/26416862');
+  assert.equal(p.address,'경기 화성시 동탄구 동탄기흥로 147-13');
+  assert.equal(p.lng,127.09023781321257);assert.equal(p.lat,37.1728614035725);
+  assert.equal(p.queriedAt.slice(0,10),'2026-11-06');
 });

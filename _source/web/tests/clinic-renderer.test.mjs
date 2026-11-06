@@ -27,7 +27,7 @@ test('renderer bounds live SDK objects, reuses a stable view, handles filters, a
   await api.renderNow(controller);
   assert.equal(created.length,initial);assert.ok(created.every(o=>o.attaches===1));
   nodes.get('#clinic-source').value='hira_unverified';await api.renderNow(controller);
-  assert.equal(nodes.get('#clinic-status').textContent.includes('1,852'),true);
+  assert.equal(nodes.get('#clinic-status').textContent.includes('1,851'),true);
   assert.ok(state.overlays.size<=240);
   nodes.get('#clinic-toggle').checked=false;await api.renderNow(controller);
   assert.equal(state.overlays.size,0);assert.ok(created.every(o=>!o.map));

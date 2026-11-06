@@ -371,6 +371,37 @@ def save_json(path, value):
     temp.replace(path)
 
 
+def place_evidence(facility, response):
+    """Keep REST responses intact; accept separately reviewed public-map evidence."""
+    documents = list(response['documents'])
+    observed = response['queriedAt']
+    for evidence in response.get('verifiedSupplements', []):
+        d = evidence['document']
+        place_id = str(d['id'])
+        if evidence['source'] != 'kakao_map_public_ui' or evidence['facilityKey'] != facility['facility_key']:
+            raise ValueError('Supplement identity mismatch')
+        if evidence['detailUrl'] != f'https://place.map.kakao.com/{place_id}' or d['place_url'] != evidence['detailUrl']:
+            raise ValueError('Supplement place URL mismatch')
+        route = urllib.parse.urlparse(evidence['routeUrl'])
+        query = urllib.parse.parse_qs(route.query)
+        transform = evidence['transform']
+        raw = transform['input']
+        if (route.scheme != 'https' or route.netloc != 'map.kakao.com'
+                or query.get('rtIds', [''])[0].split(',')[-1] != place_id
+                or transform['endpoint'] != 'https://dapi.kakao.com/v2/local/geo/transcoord.json'
+                or raw['input_coord'] != 'WCONGNAMUL' or raw['output_coord'] != 'WGS84'):
+            raise ValueError('Supplement coordinate provenance mismatch')
+        xy = query['rt'][0].split(',')[-2:]
+        converted = transform['response']['documents'][0]
+        if (not all(math.isclose(float(a), float(b), abs_tol=1e-7) for a, b in zip(xy, [raw['x'], raw['y']]))
+                or [float(d['x']), float(d['y'])] != [converted['x'], converted['y']]
+                or not valid_point(d['x'], d['y'])):
+            raise ValueError('Supplement coordinates mismatch')
+        documents.append(d)
+        observed = max(observed, evidence['verifiedAt'])
+    return documents, observed
+
+
 def collect_one(f, key, folder, budget, delay, timeout):
     # No radius anchored to HIRA coordinates: those coordinates are being checked.
     locality = ' '.join((f['address'] or '').split()[:2])
@@ -381,7 +412,8 @@ def collect_one(f, key, folder, budget, delay, timeout):
         cached = json.loads(path.read_text())
         if cached.get('fingerprint') != fingerprint:
             raise RuntimeError('Cache identity mismatch')
-        return decide(f, cached['documents'], cached['truncated']), cached['queriedAt']
+        documents, observed = place_evidence(f, cached)
+        return decide(f, documents, cached['truncated']), observed
     documents = []
     observed = datetime.now(timezone.utc).isoformat()
     truncated = False
