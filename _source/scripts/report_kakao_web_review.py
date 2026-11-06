@@ -1,6 +1,7 @@
 """Write a readable per-institution report from completed web review and final decisions."""
 import csv
 import json
+import shutil
 from collections import Counter, defaultdict
 from pathlib import Path
 from reconcile_kakao_locations import ROOT, selected_point
@@ -56,7 +57,8 @@ def main(base=BASE, folder=FOLDER):
               'newMatches': matched, 'remaining': len(queue)-matched,
               'remainingWebReasons': dict(reasons), 'totalKakaoMatches': sources[True],
               'previousMatchesLost': 0, 'previousLocationsChanged': 0,
-              'fieldLocationSurvey': False, 'csv': target.name}
+              'fieldLocationSurvey': False, 'csv': 'clinic-web-review-20261107.csv'}
+    shutil.copyfile(target, folder / report['csv'])
     (folder/'final-report.json').write_text(json.dumps(report, ensure_ascii=False, indent=2)+'\n')
     print(json.dumps(report, ensure_ascii=False))
 
