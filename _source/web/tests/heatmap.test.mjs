@@ -103,6 +103,8 @@ test('heatmap is an independent lazy demographic panel and preserves public proj
   assert.match(html,/heat-visible/);assert.match(html,/heat-opacity/);assert.match(html,/heat-blur/);
   assert.match(html,/2024/);assert.match(html,/2025/);assert.match(html,/파일에 없는 격자를 0명으로 채우지/);
   const js=readFileSync(new URL('../dist/population-heat-layer.mjs',import.meta.url),'utf8');
-  assert.match(js,/new URL\('data\/sgis-population\/',import.meta.url\)/);
+  assert.match(js,/makeSource\('data\/sgis-population\/','data\/sgis-heat-tiles\/'\)/);
+  assert.match(js,/makeSource\('data\/sgis-workers\/','data\/sgis-workers-tiles\/'\)/);
+  assert.match(js,/new URL\(cellPath,import.meta.url\)/);
   assert.doesNotMatch(js,/fetch\(['"]\/data/);
 });

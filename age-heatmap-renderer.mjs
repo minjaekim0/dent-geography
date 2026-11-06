@@ -16,7 +16,7 @@ export class AgeHeatRenderer {
   render(request){
     this.cancel();
     if(!this.worker){
-      this.worker=new Worker(new URL('age-heatmap-worker.mjs',import.meta.url),{type:'module'});
+      this.worker=new Worker(new URL('age-heatmap-worker.mjs?v=rose-1',import.meta.url),{type:'module'});
       this.worker.onmessage=({data})=>{
         const pending=this.pending.get(data.id);
         if(!pending){data.bitmap?.close();return;}

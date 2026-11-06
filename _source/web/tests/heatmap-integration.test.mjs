@@ -66,6 +66,7 @@ test('main workspace toggle preserves map instances and independently hides/resu
   const document={querySelector:selector=>{if(!nodes.has(selector))nodes.set(selector,node());return nodes.get(selector);},createElement:node};
   document.querySelector('#population-heat-opacity').value='65';
   document.querySelector('#population-heat-age').value='0:3';
+  document.querySelector('#workers-heat-toggle').checked=false;
   let active=0;const controllers=[0,1].map(id=>({map:{id},canvas:{id},el:{closest:()=>active!==id,append(){}}}));
   class Layer{constructor(map,host,options){Object.assign(this,{map,host,options});created.push(this);}setAgeRange(value){this.ageRange=value;}setStyle(style){this.style=style;}setEnabled(value){this.enabled=value;}}
   const context=vm.createContext({document,PopulationHeatLayer:Layer,clinicMapControllers:new Map(controllers.map((c,i)=>[i,c]))});
@@ -75,5 +76,18 @@ test('main workspace toggle preserves map instances and independently hides/resu
   toggle.checked=true;toggle.handlers.change();assert.equal(created.length,1);assert.equal(created[0].enabled,true);
   active=1;toggle.handlers.change();assert.equal(created.length,2);assert.equal(created[0].enabled,false);assert.equal(created[1].map,controllers[1].map);
   nodes.get('#population-heat-opacity').value='40';nodes.get('#population-heat-opacity').handlers.input();assert.equal(created[1].style.opacity,.4);
+  const resident=created[1],workers=nodes.get('#workers-heat-toggle');
+  workers.checked=true;workers.handlers.change();
+  assert.equal(created.length,3);assert.equal(created[2].options.dataset,'workers');
+  assert.equal(resident.enabled,true);assert.equal(created[2].enabled,true);
+  assert.equal(created[2].ageRange,null);assert.equal(created[2].style.opacity,.4);
+  assert.equal(nodes.get('label[for="population-heat-age"]').hidden,false);
+  toggle.checked=false;toggle.handlers.change();
+  assert.equal(resident.enabled,false);assert.equal(created[2].enabled,true);
+  toggle.checked=true;toggle.handlers.change();
+  workers.checked=false;workers.handlers.change();
+  assert.equal(created.length,3,'reuse both overlays without recreating maps');
+  assert.equal(created[2].enabled,false);assert.equal(resident.enabled,true);
+  assert.deepEqual(Array.from(resident.ageRange),[0,3]);
   const html=read('../dist/index.html');assert.match(html,/id="population-heat-toggle" type="checkbox" checked/);assert.match(html,/src="kakao-heatmap.mjs\?v=[a-f0-9]+"/);
 });

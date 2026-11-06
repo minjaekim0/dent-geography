@@ -1,4 +1,4 @@
-import {decodeAgeTile,parentAgeValues,ageColour} from './age-heatmap-model.mjs';
+import {decodeAgeTile,parentAgeValues,ageColour} from './age-heatmap-model.mjs?v=rose-1';
 
 const cache=new Map(),pending=new Map(),waiters=[];let running=0,latest=0;
 const root=new URL('data/sgis-age/',import.meta.url),colours=Array.from({length:64},(_,i)=>ageColour(i));

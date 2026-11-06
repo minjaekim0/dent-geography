@@ -32,5 +32,5 @@ export function parentAgeValues(tile,range){
 }
 export function ageColour(bucket){
   const t=bucket/63;
-  return `rgba(${Math.round(255-91*t)},${Math.round(144-136*t)},${Math.round(129-94*t)},${Math.min(.9,t*1.2)})`;
+  return `rgba(${Math.round(255-20*t)},${Math.round(170-115*t)},${Math.round(185-80*t)},${Math.min(.9,t*1.2)})`;
 }

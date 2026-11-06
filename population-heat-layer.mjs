@@ -1,24 +1,26 @@
-import {intersects,TileStore,reusableRaster,paintCellSurface} from './heatmap-model.mjs';
-import {AgeHeatRenderer,loadAgeMetadata} from './age-heatmap-renderer.mjs';
+import {intersects,TileStore,reusableRaster,paintCellSurface} from './heatmap-model.mjs?v=rose-azure-1';
+import {AgeHeatRenderer,loadAgeMetadata} from './age-heatmap-renderer.mjs?v=rose-1';
 import {ageReference,ageRangeLabel,validAgeRange} from './age-heatmap-model.mjs';
 
-const dataRoot=new URL('data/sgis-population/',import.meta.url);
-const rasterRoot=new URL('data/sgis-heat-tiles/',import.meta.url);
-const sharedStore=new TileStore(dataRoot);
-let metadata;
-async function loadMetadata(){
-  if(!metadata)metadata=Promise.all([dataRoot,rasterRoot].map(root=>fetch(new URL('manifest.json',root)).then(r=>{if(!r.ok)throw Error('인구 자료를 불러오지 못했습니다.');return r.json();}))).then(([cells,rasters])=>({cells,rasters})).catch(e=>{metadata=null;throw e;});
-  return metadata;
+function makeSource(cellPath,rasterPath){
+  const dataRoot=new URL(cellPath,import.meta.url),rasterRoot=new URL(rasterPath,import.meta.url);
+  const store=new TileStore(dataRoot),imageCache=new Map();let metadata;
+  async function loadData(){
+    if(!metadata)metadata=Promise.all([dataRoot,rasterRoot].map(root=>fetch(new URL('manifest.json',root)).then(r=>{if(!r.ok)throw Error('격자 자료를 불러오지 못했습니다.');return r.json();}))).then(([cells,rasters])=>({cells,rasters})).catch(e=>{metadata=null;throw e;});
+    return metadata;
+  }
+  function imageLoader(file){
+    if(imageCache.has(file)){const image=imageCache.get(file);imageCache.delete(file);imageCache.set(file,image);return image;}
+    const promise=new Promise((resolve,reject)=>{
+      const image=new Image();image.onload=()=>resolve(image);image.onerror=()=>{imageCache.delete(file);reject(Error('격자 타일을 불러오지 못했습니다.'));};const url=new URL(file,rasterRoot);url.searchParams.set('v','rose-azure-1');image.src=url.href;
+    });
+    imageCache.set(file,promise);while(imageCache.size>32)imageCache.delete(imageCache.keys().next().value);
+    return promise;
+  }
+  return {store,loadData,imageLoader};
 }
-const imageCache=new Map();
-function loadImage(file){
-  if(imageCache.has(file)){const image=imageCache.get(file);imageCache.delete(file);imageCache.set(file,image);return image;}
-  const promise=new Promise((resolve,reject)=>{
-    const image=new Image();image.onload=()=>resolve(image);image.onerror=()=>{imageCache.delete(file);reject(Error('인구 타일을 불러오지 못했습니다.'));};image.src=new URL(file,rasterRoot).href;
-  });
-  imageCache.set(file,promise);while(imageCache.size>32)imageCache.delete(imageCache.keys().next().value);
-  return promise;
-}
+const residentSource=makeSource('data/sgis-population/','data/sgis-heat-tiles/');
+const workerSource=makeSource('data/sgis-workers/','data/sgis-workers-tiles/');
 
 export function chooseRasterLevel(levels,metresPerPixel){
   return levels.reduce((chosen,level)=>level.resolutionM<=metresPerPixel*1.5?level:chosen,levels[0]);
@@ -29,12 +31,14 @@ export const blurRadiusPixels=(blur,metresPerPixel)=>blur*5/Math.max(.001,metres
 
 /** One reusable overlay on an existing Kakao map; never creates a second map. */
 export class PopulationHeatLayer {
-  constructor(map,host,{onStatus=()=>{},onScale=()=>{},store=sharedStore,loadData=loadMetadata,imageLoader=loadImage,loadAges=loadAgeMetadata,createAgeRenderer=()=>new AgeHeatRenderer()}={}){
-    Object.assign(this,{map,host,onStatus,onScale,store,loadData,imageLoader,loadAges,createAgeRenderer});
+  constructor(map,host,{onStatus=()=>{},onScale=()=>{},dataset="population",store,loadData,imageLoader,loadAges=loadAgeMetadata,createAgeRenderer=()=>new AgeHeatRenderer()}={}){
+    const source=dataset==='workers'?workerSource:residentSource;
+    Object.assign(this,{map,host,onStatus,onScale,dataset,store:store||source.store,loadData:loadData||source.loadData,imageLoader:imageLoader||source.imageLoader,loadAges,createAgeRenderer});
+    this.label=dataset==='workers'?'종사자':'거주인구';
     this.ageRange=null;
     this.enabled=false;this.opacity=.65;this.blur=6;this.sequence=0;this.frame=0;this.timer=0;this.lastRefresh=0;this.drawCount=0;this.painted=null;
     this.canvas=document.createElement('canvas');this.canvas.className='population-heat-canvas';
-    this.canvas.setAttribute('role','img');this.canvas.setAttribute('aria-label','2024년 100m 거주인구 히트맵');
+    this.canvas.setAttribute('role','img');this.canvas.setAttribute('aria-label',`2024년 100m ${this.label} 히트맵`);
     Object.assign(this.canvas.style,{position:'absolute',pointerEvents:'none',zIndex:'0',opacity:String(this.opacity),filter:'none'});
     this.ctx=this.canvas.getContext('2d');
     const owner=this;
@@ -54,6 +58,7 @@ export class PopulationHeatLayer {
     this.canvas.style.opacity=String(opacity);this.updateBlur();
   }
   setAgeRange(range){
+    if(this.dataset==='workers'&&range!==null)throw Error('종사자 자료에는 연령별 추정을 적용하지 않습니다.');
     if(range!==null&&!validAgeRange(range))throw Error('연령 범위가 올바르지 않습니다.');
     if(String(this.ageRange)===String(range))return;
     this.ageRange=range&&[...range];this.sequence++;this.ageRenderer?.cancel();
@@ -97,7 +102,7 @@ export class PopulationHeatLayer {
     const current=()=>this.enabled&&run===this.sequence&&!this.host.closest('[hidden]');
     try{
       if(this.ageRange){await this.refreshAge(current);return;}
-      if(!this.data){this.onStatus('인구 자료를 불러오는 중입니다.');this.data=await this.loadData();}
+      if(!this.data){this.onStatus(`${this.label} 자료를 불러오는 중입니다.`);this.data=await this.loadData();}
       if(!current())return;
       this.onScale(this.data.cells.levels[0].weightReference);
       const box=this.box(),pad=Math.max((box[3]-box[1])*.65,.02),query=[box[0]-pad*1.3,box[1]-pad,box[2]+pad*1.3,box[3]+pad];
@@ -108,19 +113,19 @@ export class PopulationHeatLayer {
         if(this.store.hasAll(files))accept(this.store.peek(files),true);
         else{
           const cached=this.store.peek(files);if(cached.length)accept(cached,false);
-          this.onStatus('주변 인구 자료를 불러오는 중입니다.');
+          this.onStatus(`주변 ${this.label} 자료를 불러오는 중입니다.`);
           const cells=await this.store.load(files,current);if(!current())return;accept(cells,true);
         }
       }else{
         const level=chooseRasterLevel(this.data.rasters.levels,this.metresPerPixel());
         const tiles=level.tiles.filter(tile=>intersects(tile.bbox,query));
-        this.onStatus('100m 인구 타일을 불러오는 중입니다.');
+        this.onStatus(`100m ${this.label} 타일을 불러오는 중입니다.`);
         const images=await Promise.all(tiles.map(async tile=>({tile,image:await this.imageLoader(tile.file)})));
         if(!current())return;
         this.content={mode:'tiles',images,key:'tiles:'+tiles.map(t=>t.file).join('|')};this.schedule();
       }
-      if(current())this.onStatus('2024 거주인구 · 100m 셀 기준');
-    }catch(error){if(current()&&error.name!=='AbortError'){console.error('Population heat layer',error);this.onStatus('인구 자료 연결 실패 · 다시 켜 주세요.');}}
+      if(current())this.onStatus(`2024 ${this.label} · 100m 셀 기준`);
+    }catch(error){if(current()&&error.name!=='AbortError'){console.error('Population heat layer',error);this.onStatus(`${this.label} 자료 연결 실패 · 다시 켜 주세요.`);}}
   }
   async refreshAge(current){
     const range=[...this.ageRange],key='age:'+range.join(':');
@@ -159,7 +164,7 @@ export class PopulationHeatLayer {
     let rendered=0;
     if(this.content.mode==='cells')rendered=paintCellSurface(this.ctx,this.content.cells,this.data.cells.levels[0].weightReference,(lng,lat)=>{
       const xy=p.containerPointFromCoords(new kakao.maps.LatLng(lat,lng));return {x:xy.x+pad,y:xy.y+pad};
-    },rasterBox);
+    },rasterBox,this.dataset);
     else for(const {tile,image} of this.content.images){
       if(!intersects(tile.bbox,rasterBox))continue;
       const a=p.containerPointFromCoords(new kakao.maps.LatLng(tile.nw[1],tile.nw[0])),b=p.containerPointFromCoords(new kakao.maps.LatLng(tile.se[1],tile.se[0]));

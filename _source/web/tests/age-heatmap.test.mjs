@@ -95,9 +95,10 @@ test('background renderer cancels obsolete selections, closes stale bitmaps and 
 });
 test('home age UI defaults to all population and restores the seven age groups across map switches',()=>{
   const nodes=new Map(),created=[];
-  const node=()=>({checked:true,value:'24',selectedOptions:[{textContent:'19세 이하'}],handlers:{},querySelector:()=>({textContent:''}),addEventListener(type,fn){this.handlers[type]=fn;}});
+  const node=()=>({style:{},checked:true,value:'24',selectedOptions:[{textContent:'19세 이하'}],handlers:{},querySelector:()=>({textContent:''}),addEventListener(type,fn){this.handlers[type]=fn;}});
   const document={querySelector:selector=>{if(!nodes.has(selector))nodes.set(selector,node());return nodes.get(selector);},createElement:node};
   document.querySelector('#population-heat-age').value='all';document.querySelector('#population-heat-opacity').value='65';
+  document.querySelector('#workers-heat-toggle').checked=false;
   let active=0;const controllers=[0,1].map(id=>({map:{id},canvas:{},el:{closest:()=>active!==id,append(){}}}));
   class Layer{constructor(){created.push(this);}setAgeRange(value){this.range=value;}setStyle(){}setEnabled(value){this.enabled=value;}}
   const context=vm.createContext({document,PopulationHeatLayer:Layer,ageRangeLabel,clinicMapControllers:new Map(controllers.map((c,i)=>[i,c]))});

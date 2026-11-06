@@ -25,12 +25,12 @@ export function cellBounds(cell){
   return [Math.min(cell[3],cell[5],cell[7],cell[9]),Math.min(cell[4],cell[6],cell[8],cell[10]),Math.max(cell[3],cell[5],cell[7],cell[9]),Math.max(cell[4],cell[6],cell[8],cell[10])];
 }
 
-export function paintCellSurface(context,cells,reference,project,bbox){
+export function paintCellSurface(context,cells,reference,project,bbox,palette="population"){
   let rendered=0;
   for(const cell of cells){
     if(cell[2]<=0||!intersects(cellBounds(cell),bbox))continue;
     const t=weight(cell[2],reference);
-    context.fillStyle=`rgba(${Math.round(255-91*t)},${Math.round(144-136*t)},${Math.round(129-94*t)},${Math.min(.9,t*1.2)})`;
+    context.fillStyle=palette==='workers'?`rgba(${Math.round(145-105*t)},${Math.round(210-65*t)},${Math.round(255-15*t)},${Math.min(.9,t*1.2)})`:`rgba(${Math.round(255-20*t)},${Math.round(170-115*t)},${Math.round(185-80*t)},${Math.min(.9,t*1.2)})`;
     context.beginPath();
     for(let vertex=0;vertex<4;vertex++){
       const xy=project(cell[3+vertex*2],cell[4+vertex*2]);
