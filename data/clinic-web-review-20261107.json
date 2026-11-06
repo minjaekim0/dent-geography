@@ -1,0 +1,18 @@
+{
+  "reviewedInstitutions": 1852,
+  "webSearchQueries": 3155,
+  "newMatches": 1245,
+  "remaining": 607,
+  "remainingWebReasons": {
+    "기관명·주소 일치 확인 안 됨": 579,
+    "다른 기관과 카카오 장소 중복": 5,
+    "웹 재검색에서도 치과 장소 결과 없음": 13,
+    "기존 후보의 검색 한도 추가 확인": 9,
+    "기존 후보와 복수 기관 관계 확인": 1
+  },
+  "totalKakaoMatches": 19017,
+  "previousMatchesLost": 0,
+  "previousLocationsChanged": 0,
+  "fieldLocationSurvey": false,
+  "csv": "final-review.csv"
+}

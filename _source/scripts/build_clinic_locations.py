@@ -1,7 +1,9 @@
 """Export the selected current locations with a public-field allowlist."""
 import hashlib
 import json
+from datetime import datetime
 from pathlib import Path
+from zoneinfo import ZoneInfo
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -29,6 +31,8 @@ def main():
               'matchingVersion': 5,
               'unlocated': missing, 'scope': '심평원 분기 현황의 치과의원·치과병원 전체(대학·부속 등 포함)',
               'locations': rows}
+    result['kakaoReviewedThrough'] = max(datetime.fromisoformat(r['queriedAt'].replace('Z', '+00:00')).astimezone(ZoneInfo('Asia/Seoul')).date().isoformat()
+                                         for r in rows if r['source'] == 'kakao' and r['queriedAt'])
     target = ROOT / 'web/dist/data/current-clinics.json'
     target.write_text(json.dumps(result, ensure_ascii=False, separators=(',', ':')))
     version = hashlib.sha256(target.read_bytes()).hexdigest()[:12]

@@ -77,7 +77,7 @@ async function openClinic(state, point, marker) {
     if(token!==state.token)return;
     const loaded=cardFor(state,p.name);
     addText(loaded,p.address);
-    const observed=p.queriedAt ? p.queriedAt.slice(0,10) : data.kakaoQueriedOn;
+    const observed=p.queriedAt ? new Date(Date.parse(p.queriedAt)+9*60*60*1000).toISOString().slice(0,10) : data.kakaoQueriedOn;
     addText(loaded,p.source==='kakao'?'주소·위치: 카카오맵 · '+observed+' 조회':'주소·위치: 심평원 · 카카오 연결 보류');
     addText(loaded,'기관 목록: '+data.hiraAsOf+' · 현재 영업 여부는 별도 확인','small');
     if(p.kakaoName && p.kakaoName!==p.name)addText(loaded,'카카오 명칭: '+p.kakaoName);
@@ -161,7 +161,7 @@ async function loadData() {
   if(data)return data;
   if(loading)return loading;
   tell('치과 위치를 불러오는 중입니다…');
-  loading=fetch('data/current-clinics-index.json?v=dongtan-20261106').then(r=>{
+  loading=fetch('data/current-clinics-index.json?v=web-review-20261107').then(r=>{
     if(!r.ok)throw new Error('치과 위치를 불러오지 못했습니다.');return r.json();
   }).then(value=>{data=decodeClinicIndex(value);index=createClinicIndex(data.locations);failed=false;return data;})
     .catch(error=>{failed=true;tell(error.message+' 치과 위치를 껐다 켜면 다시 시도합니다.');})

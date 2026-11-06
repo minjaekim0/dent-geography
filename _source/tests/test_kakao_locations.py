@@ -27,6 +27,10 @@ def place(**kwargs):
 
 
 class KakaoLocationTests(unittest.TestCase):
+    def test_public_map_short_medical_category_uses_exact_name_and_address(self):
+        self.assertEqual(k.decide(facility(), [place(category_name='의원')])['status'], 'matched')
+        self.assertEqual(k.decide(facility(), [place(category_name='카페')])['status'], 'no_unique_match')
+
     def test_exact_match_prefers_kakao_even_when_hira_differs(self):
         f = facility()
         r = k.decide(f, [place()])

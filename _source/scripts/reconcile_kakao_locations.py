@@ -218,7 +218,8 @@ def dental_place(document, same_building=False):
     name = document.get('place_name', '')
     if any(word in category + ' ' + name for word in ('주차장', '기공소', '기공실', '의료기기', '의료용품', '연구소', '치과재료')):
         return False
-    return '치과' in category or (same_building and '치과' in name and '의료' in category)
+    medical = '의료' in category or category in {'의원', '병원', '치과의원', '치과병원', '종합병원', '대학병원'}
+    return '치과' in category or (same_building and '치과' in name and medical)
 
 
 def decide(facility, documents, truncated=False):

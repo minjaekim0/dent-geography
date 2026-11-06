@@ -35,7 +35,7 @@ test('nationwide and dense view groups cap SDK objects without losing, duplicati
   }
   const country=clinicDisplayPlan(index,[124,33,132,40]);
   assert.equal(country.points.length,19623);
-  assert.equal(country.entries.reduce((n,g)=>n+g.kakaoCount,0),17772);
+  assert.equal(country.entries.reduce((n,g)=>n+g.kakaoCount,0),19017);
 });
 test('coincident clinics remain individually available through a full membership list',()=>{
   const points=Array.from({length:800},(_,id)=>({id,lng:127,lat:37,source:'kakao'}));

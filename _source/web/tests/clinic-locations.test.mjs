@@ -16,8 +16,8 @@ test('only real Kakao place links are clickable',()=>{
 test('public data exposes selected points and no original provider identifiers',()=>{
   const data=JSON.parse(read('../dist/data/current-clinics.json'));
   assert.equal(data.locations.length,19623);assert.equal(data.unlocated,1);
-  assert.equal(data.locations.filter(p=>p.source==='kakao').length,17772);
-  assert.equal(data.locations.filter(p=>p.source==='hira_unverified').length,1851);
+  assert.equal(data.locations.filter(p=>p.source==='kakao').length,19017);
+  assert.equal(data.locations.filter(p=>p.source==='hira_unverified').length,606);
   assert.equal(new Set(data.locations.map(p=>p.id)).size,data.locations.length);
   assert.ok(data.locations.every(p=>p.lng>=124&&p.lng<=132&&p.lat>=33&&p.lat<=39.5));
   assert.doesNotMatch(JSON.stringify(data),/facilityKey|암호화요양기호|KAKAO_REST_API_KEY/);
@@ -59,4 +59,16 @@ test('Dongtan Hyu uses the independently verified public Kakao place when REST s
   assert.equal(p.address,'경기 화성시 동탄구 동탄기흥로 147-13');
   assert.equal(p.lng,127.09023781321257);assert.equal(p.lat,37.1728614035725);
   assert.equal(p.queriedAt.slice(0,10),'2026-11-06');
+});
+
+
+test('formerly held clinics retain the exact independently observed public Kakao locations',()=>{
+  const actual=JSON.parse(read('../dist/data/current-clinics.json'));
+  const samples=JSON.parse(read('./fixtures/kakao-web-reviewed-locations.json'));
+  assert.equal(actual.kakaoReviewedThrough,'2026-11-07');
+  for(const expected of samples){
+    const clinic=actual.locations.find(p=>p.name===expected.name && p.placeUrl===expected.placeUrl);
+    assert.ok(clinic,expected.name);assert.equal(clinic.source,'kakao');
+    for(const [key,value]of Object.entries(expected))assert.equal(clinic[key],value,key+' '+expected.name);
+  }
 });
