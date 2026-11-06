@@ -7,6 +7,11 @@ const kakaoControllers = new Map();
 globalThis.clinicMapControllers = kakaoControllers;
 let kakaoReady;
 let fillOpacity = .65;
+// Standalone demographic pages keep their own default; the dental workspace opts in.
+const statFillToggle = document.querySelector('#stat-fill-toggle');
+const statFillAvailable = document.querySelector('main')?.dataset?.statFill !== 'off';
+let statFillEnabled = statFillAvailable && (statFillToggle?.checked ?? true);
+const fillOpacityControl = document.querySelector('#fill-opacity');
 let pickerFeatures;
 let searchSequence = 0;
 
@@ -149,6 +154,27 @@ class KakaoAnalysisMap {
         center: new kakao.maps.LatLng(36.0,127.8), level: 13
       });
       this.map.addControl(new kakao.maps.MapTypeControl(), kakao.maps.ControlPosition.TOPRIGHT);
+      if(this.el.closest('main[data-home-map]')){
+        // Fade the composited background once. Fading individual tile planes
+        // exposes the SDK's cached, enlarged tiles underneath the current zoom.
+        const owner=this,shade=document.createElement('div');
+        shade.className='kakao-basemap-shade';shade.setAttribute('aria-hidden','true');
+        class BackgroundShade extends kakao.maps.AbstractOverlay{
+          onAdd(){this.getPanels().overlayLayer.prepend(shade);}
+          onRemove(){shade.remove();}
+          draw(){
+            const nw=owner.map.getProjection().coordsFromContainerPoint(new kakao.maps.Point(0,0));
+            const p=this.getProjection().pointFromCoords(nw);
+            const pad=256;
+            Object.assign(shade.style,{left:(p.x-pad)+'px',top:(p.y-pad)+'px',width:(owner.el.clientWidth+pad*2)+'px',height:(owner.el.clientHeight+pad*2)+'px'});
+          }
+        }
+        this.backgroundShade=new BackgroundShade();this.backgroundShade.setMap(this.map);
+        const refreshShade=()=>this.backgroundShade.draw();
+        kakao.maps.event.addListener(this.map,'bounds_changed',refreshShade);
+        kakao.maps.event.addListener(this.map,'idle',refreshShade);
+        window.addEventListener('basemap-style',refreshShade);
+      }
       this.tip = document.createElement('div');
       this.tip.className = 'tooltip';
       this.legend = document.createElement('div'); this.legend.className = 'legend';
@@ -171,6 +197,7 @@ class KakaoAnalysisMap {
         this.lastSize = size;
         const center = this.map.getCenter();
         this.map.relayout(); this.map.setCenter(center);
+        this.backgroundShade?.draw();
         this.schedule();
       });
       this.resize.observe(this.el);
@@ -195,6 +222,7 @@ class KakaoAnalysisMap {
       }
       this.max = scaleMax(this.features);
       paintLegend(this.legend, this.max);
+      this.legend.hidden = !statFillEnabled;
       this.hideTip();
       this.map.relayout();
       this.updateZoom();
@@ -207,12 +235,16 @@ class KakaoAnalysisMap {
     this.zoomLabel.textContent = (2 ** (this.homeLevel - this.map.getLevel())).toFixed(1) + '×';
   }
   reset() {
+    const home=Boolean(this.el.closest('main[data-home-map]'));
+    if(home)this.map.setMaxLevel(14);
     const bounds = new kakao.maps.LatLngBounds(new kakao.maps.LatLng(33.05,124.5),new kakao.maps.LatLng(38.65,131.95));
     this.map.setBounds(bounds,35,35,65,35);
+    if(home){const level=Math.max(1,this.map.getLevel()-1);this.map.setMaxLevel(level);this.map.setLevel(level);}
     this.homeLevel = this.map.getLevel(); this.updateZoom(); this.schedule();
   }
   suspend() {
     globalThis.clinicLayer?.clear(this);
+    globalThis.populationHeatLayer?.clear(this);
     this.revision++;
     if (this.frame !== null) cancelAnimationFrame(this.frame);
     this.frame = null; this.hideTip();
@@ -233,9 +265,9 @@ class KakaoAnalysisMap {
     return {
       strokeColor: context ? '#536d7e' : selected ? '#ff9c24' : '#8193a0',
       strokeWeight: context ? 1.1 : selected ? 3 : this.el.id === 'local-map' ? .55 : .8,
-      strokeOpacity: .9,
+      strokeOpacity: selected || statFillEnabled ? .9 : .18,
       fillColor: value == null ? '#c8d8de' : paint(value,this.max),
-      fillOpacity: context ? 0 : fillOpacity,
+      fillOpacity: context || !statFillEnabled ? 0 : fillOpacity,
       zIndex: context ? 3 : selected ? 5 : 1
     };
   }
@@ -280,6 +312,7 @@ class KakaoAnalysisMap {
   }
   renderVisible() {
     globalThis.clinicLayer?.render(this);
+    globalThis.populationHeatLayer?.render(this);
     const revision = this.revision, bounds = this.viewport();
     const work = [];
     for (const [parts,context] of [[this.parts,false],[this.contextParts,true]]) {
@@ -332,7 +365,18 @@ document.querySelector('#region-picker').addEventListener('change',event => {
   const controller = activeController();
   if (controller?.map) controller.select(event.target.value,true);
 });
-document.querySelector('#fill-opacity').addEventListener('input',event => {
+statFillToggle?.addEventListener('change', event => {
+  statFillEnabled = statFillAvailable && event.target.checked;
+  if (fillOpacityControl) fillOpacityControl.disabled = !statFillEnabled;
+  for (const controller of kakaoControllers.values()) {
+    if (controller.legend) controller.legend.hidden = !statFillEnabled;
+    controller.schedule();
+  }
+});
+if (statFillToggle && typeof statFillToggle.checked === 'boolean') {
+  if (fillOpacityControl) fillOpacityControl.disabled = !statFillEnabled;
+}
+fillOpacityControl?.addEventListener('input',event => {
   fillOpacity = Number(event.target.value)/100;
   document.querySelector('#fill-value').textContent = event.target.value+'%';
   activeController()?.schedule();

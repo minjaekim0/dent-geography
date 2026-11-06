@@ -1,0 +1,21 @@
+<!doctype html>
+<html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex,nofollow"><title>100m 인구 히트맵 · 치과 입지 지도</title><link rel="stylesheet" href="heatmap.css"></head>
+<body><main>
+<header><div><a href="index.html">치과 입지 지도</a><h1>인구 히트맵</h1><p>사람이 모여 사는 곳을 더 짙은 붉은색으로</p></div><span class="year">2024년 인구 · 100m 격자</span></header>
+<section class="toolbar" aria-label="인구 히트맵 도구">
+<form id="heat-search" role="search"><label class="sr-only" for="heat-query">지역·역·주소 검색</label><input id="heat-query" type="search" maxlength="120" placeholder="지역·역·주소 검색" required><button type="submit">검색</button></form>
+<button id="heat-national" type="button">전국 보기</button>
+<label class="toggle"><input id="heat-visible" type="checkbox" checked>인구 히트맵</label>
+<label class="slider" for="heat-opacity">진하기 <input id="heat-opacity" type="range" min="10" max="100" value="75"><output id="heat-opacity-value">75%</output></label>
+<label class="slider" for="heat-blur">번짐 <input id="heat-blur" type="range" min="0" max="44" value="24"><span class="hint">부드럽게</span></label>
+<div id="heat-results" hidden aria-live="polite"></div>
+</section>
+<section class="map-shell" aria-label="전국 거주인구 히트맵">
+<div id="heat-map" aria-label="카카오 배경지도"></div><canvas id="heat-canvas" aria-label="SGIS 인구 분포" role="img"></canvas>
+<div class="zoom"><button id="heat-plus" aria-label="지도 확대">+</button><button id="heat-minus" aria-label="지도 축소">−</button></div>
+<div class="legend"><strong>거주인구 집중도</strong><div class="ramp"></div><div class="ends"><span>낮음</span><span>높음</span></div><small>100m 셀 기준 · 확대 수준 공통</small></div>
+<div class="map-status"><span id="heat-status" role="status">인구 자료를 불러오는 중입니다.</span><button id="heat-retry" hidden>다시 시도</button></div>
+<div id="heat-error" role="alert" hidden></div>
+</section>
+<section class="source"><div><span class="source-dot"></span><strong>SGIS 100m 인구 격자</strong><span>인구 2024 · 경계 2025</span></div><p>각 셀 전체를 인구수에 비례해 채색한 뒤 부드럽게 번짐 처리합니다. 번짐을 0으로 낮추면 원래 셀 모양을 볼 수 있습니다. 축소할 때도 같은 100m 셀을 칠한 결과와 색상 기준을 유지합니다. <a href="index.html">치과 위치와 함께 보기</a></p><details><summary>자료 출처와 해석</summary><p>출처: <a href="https://sgis.mods.go.kr/view/pss/openDataIntrcn" target="_blank" rel="noopener">국가데이터처 SGIS · 인구주택총조사 격자통계</a>. 2026년 11월 6일 수집. 가까이에서는 실제 셀 경계를, 넓게 볼 때는 동일한 100m 셀의 채색 결과를 미리 만든 이미지로 표시합니다. 실제 건물별 인구나 반경 100m 인구를 뜻하지 않습니다.</p><p>소수 인구의 통계비밀 보호 처리가 반영되어 있습니다. 파일에 없는 격자를 0명으로 채우지 않았으므로, 색이 없는 곳도 무인 지역으로 단정할 수 없습니다. 주민등록인구·주간인구와는 별도의 통계입니다.</p><a href="data/sgis-population/manifest.json" target="_blank" rel="noopener">자료 구성·검증 기록</a></details></section>
+</main><script type="module" src="heatmap.js"></script></body></html>

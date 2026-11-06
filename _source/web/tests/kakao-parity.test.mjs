@@ -90,18 +90,55 @@ test('period clamping and 3/5/10-year windows retain their boundary behavior',()
   for(const size of [0,3,5,10])for(const first of [1990,2000,2010,2025,2030])for(const last of [1999,2010,2025,2040])assert.deepEqual(plain(kakao.api.normalize(first,last,2000,2025,size)),plain(baseline.api.normalize(first,last,2000,2025,size)));
 });
 
-function renderer() {
+function renderer(page) {
   const events=[];
+  const controls = new Map();
+  for (const selector of ['#stat-fill-toggle', '#fill-opacity', '#fill-value']) {
+    if (page === 'home') continue;
+    controls.set(selector, {checked:false, addEventListener(type, listener){this[type] = listener;}});
+  }
+  const document = {querySelector(selector){
+    if (!page) return {addEventListener(){}};
+    if (selector === 'main') return {dataset:page === 'home' ? {statFill:'off'} : {}};
+    return controls.get(selector) ?? (selector.startsWith('#fill-') || selector === '#stat-fill-toggle' ? null : {addEventListener(){}});
+  }};
   class LatLng {constructor(lat,lng){this.lat=lat;this.lng=lng}}
   class Shape {constructor(options){this.options=options}setOptions(options){this.updates=(this.updates||0)+1;Object.assign(this.options,options)}setMap(map){this.map=map}}
-  const ctx=vm.createContext({document:{querySelector(){return {addEventListener(){}}}},Map,Set,console,performance,
+  const ctx=vm.createContext({document,Map,Set,console,performance,
     requestAnimationFrame:fn=>{fn();return 1},cancelAnimationFrame(){},
     kakao:{maps:{LatLng,Polygon:Shape,Polyline:Shape,event:{addListener(...args){events.push(args)}}}},
     polys:g=>g.type==='Polygon'?[g.coordinates]:g.coordinates,
     rate:p=>p.value,paint:(value,max)=>'color:'+value+'/'+max,S:{metric:'net',metro:false},T:null,mc:()=>'',D:[]});
   vm.runInContext(read('kakao-map.js')+'\nglobalThis.api={boundingBox,intersects,prepareFeatures,kakaoPath,KakaoAnalysisMap};',ctx);
-  return {api:ctx.api,ctx,events};
+  return {api:ctx.api,ctx,events,controls};
 }
+
+test('home keeps fill and legend disabled across metric changes; laboratory can toggle and adjust it',()=>{
+  const part={feature:{properties:{code:'a',value:4}}};
+  const home=renderer('home');
+  const map=new home.api.KakaoAnalysisMap({id:'map'});map.max=10;map.state={selected:'a'};
+  for (const metric of ['dentalFacilities','specialty','net']) {
+    home.ctx.S.metric=metric;
+    assert.equal(map.options(part).fillOpacity,0);
+    assert.equal(map.options(part).strokeColor,'#ff9c24');
+  }
+  const lab=renderer('lab');
+  const controller=new lab.api.KakaoAnalysisMap({id:'map'});controller.max=10;controller.state={selected:null};
+  controller.legend={hidden:true};controller.schedule=()=>{};
+  lab.ctx.clinicMapControllers.set('map',controller);
+  const toggle=lab.controls.get('#stat-fill-toggle'),opacity=lab.controls.get('#fill-opacity');
+  assert.equal(controller.options(part).fillOpacity,0);
+  toggle.change({target:{checked:true}});
+  assert.equal(controller.options(part).fillOpacity,.65);
+  assert.equal(controller.legend.hidden,false);
+  opacity.input({target:{value:'40'}});
+  assert.equal(controller.options(part).fillOpacity,.4);
+  toggle.change({target:{checked:false}});
+  assert.equal(controller.options(part).fillOpacity,0);
+  assert.equal(controller.legend.hidden,true);
+  toggle.change({target:{checked:true}});
+  assert.equal(controller.options(part).fillOpacity,.4);
+});
 test('Kakao geometry preserves multipolygon islands, holes, every coordinate and lat/lng ordering',()=>{
   const {api}=renderer();
   for(const name of ['district-boundaries','eupmyeondong-boundaries']){
@@ -137,4 +174,19 @@ test('Kakao build is independent of legacy projection and works below a project 
   assert.doesNotMatch(read('kakao.html')+migrated,/(?:href|src)="\/data\/|fetch\('\/data\//);
   assert.match(read('kakao-map.js'),/new kakao\.maps\.Polygon/);
   assert.match(read('kakao-map.js'),/new kakao\.maps\.Polyline/);
+});
+
+test('statistical fill can be disabled independently while selection and the chosen opacity survive',()=>{
+  const {api,ctx}=renderer();
+  const controller=new api.KakaoAnalysisMap({id:'map'});controller.max=10;controller.state={selected:'a'};
+  const part={feature:{properties:{code:'a',value:4}}};
+  assert.equal(controller.options(part).fillOpacity,.65);
+  vm.runInContext('statFillEnabled=false',ctx);
+  assert.equal(controller.options(part).fillOpacity,0);
+  assert.equal(controller.options(part).strokeColor,'#ff9c24');
+  controller.state.selected=null;
+  assert.equal(controller.options(part).strokeOpacity,.18);
+  vm.runInContext('fillOpacity=.4;statFillEnabled=true',ctx);
+  assert.equal(controller.options(part).fillOpacity,.4);
+  assert.equal(controller.options(part,true).fillOpacity,0);
 });

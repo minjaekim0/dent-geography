@@ -2,10 +2,10 @@
 (() => {
   const dentalBar=document.querySelector('[aria-label="치과 현황 지표"]');
   const eventBar=document.querySelector('#event-metric-bar');
-  const configs=[['population','population','dental','인구 분포'],['populationChange','population-change','events','인구 증감'],['daytime','daytime','dental','공식 주간인구'],['daytimeChange','daytime-change','events','공식 주간인구 증감']].map(([metric,id,section,title])=>({
+  const configs=[['population','population','dental','인구 분포'],['populationHeatmap','heatmap','dental','인구 히트맵'],['populationChange','population-change','events','인구 증감'],['daytime','daytime','dental','공식 주간인구'],['daytimeChange','daytime-change','events','공식 주간인구 증감']].map(([metric,id,section,title])=>({
     metric,section,panel:document.querySelector(`#${id}-panel`),frame:document.querySelector(`#${id}-frame`),status:document.querySelector(`#${id}-panel-status`),
-    ready:false,subtitle:`${metric.startsWith('daytime')?'시군구':'읍면동'}별 연령·성별·연도별 ${title}`,date:'인구 자료 불러오는 중'
-  }));
+    ready:false,subtitle:metric==='populationHeatmap'?'SGIS 100m 격자 · 거주인구 히트맵':`${metric.startsWith('daytime')?'시군구':'읍면동'}별 연령·성별·연도별 ${title}`,date:'인구 자료 불러오는 중'
+  })).filter(config=>config.panel);
   const saved=new Map();let active=null;
   const hiddenTargets=['#district','#local','.kakao-tools','#data-notes','header .actions .switch','[aria-label="지도 분류"] .filter','[data-panel="facilities"]','[data-panel="specialty"]','[data-panel="events"]','[data-panel="dental"]'];
   function hide(el){if(!saved.has(el))saved.set(el,el.hidden);el.hidden=true;}
@@ -32,7 +32,7 @@
     document.querySelectorAll('[data-section]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.section===next.section)));
     document.querySelectorAll('[data-metric]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.metric===metric)));
     document.querySelectorAll('[data-event-kind]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.eventKind===metric)));
-    next.status.hidden=next.ready;updateHeader(next);return true;
+    next.status.hidden=next.ready;updateHeader(next);globalThis.refreshWorkspace?.(metric);return true;
   }};
   window.addEventListener('message',event=>{
     if(event.origin!==location.origin||event.data?.type!=='population-layout')return;

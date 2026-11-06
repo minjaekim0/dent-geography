@@ -22,3 +22,19 @@ test('legacy renderer is preserved outside the public directory', () => {
   assert.equal(existsSync(new URL('../dist/legacy/index.html', import.meta.url)), false);
   assert.match(read('../scripts/build-kakao.mjs'), /legacy\/index.html/);
 });
+
+test('home has no statistical fill controls; laboratory retains them and links back', () => {
+  for (const entry of ['index.html', 'kakao.html']) {
+    const html = read('../dist/' + entry);
+    assert.match(html, /data-stat-fill="off"/);
+    assert.doesNotMatch(html, /id="stat-fill-toggle"|id="fill-opacity"|id="fill-value"/);
+    assert.match(html, /href="lab.html">실험실<\/a>/);
+    assert.match(html, /id="clinic-toggle"/);
+    assert.match(html, /id="population-heat-toggle"/);
+  }
+  const lab = read('../dist/lab.html');
+  assert.doesNotMatch(lab, /data-stat-fill="off"/);
+  assert.match(lab, /id="stat-fill-toggle"/);
+  assert.match(lab, /id="fill-opacity"/);
+  assert.match(lab, /href="index.html">기본 홈으로<\/a>/);
+});

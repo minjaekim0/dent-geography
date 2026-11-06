@@ -1,4 +1,4 @@
-import {decodeClinicIndex, createClinicIndex, clinicDisplayPlan, placeLink} from './clinic-model.mjs?v=compact-1';
+import {decodeClinicIndex, createClinicIndex, clinicDisplayPlan, placeLink} from './clinic-model.mjs?v=dots-8-1';
 
 const toggle = document.querySelector('#clinic-toggle');
 const filter = document.querySelector('#clinic-source');
@@ -9,12 +9,25 @@ const count = n => n.toLocaleString('ko-KR');
 const tell = message => { status.textContent = message; };
 const position = p => new kakao.maps.LatLng(p.lat, p.lng);
 
+const imageCache=new Map();
+const dotBorderFor=size=>Math.max(.35,(size-2)/8);
+function imagesFor(size) {
+  if(!imageCache.has(size)) {
+    const border=dotBorderFor(size);
+    const image=color=>new kakao.maps.MarkerImage('data:image/svg+xml;charset=UTF-8,'+encodeURIComponent(
+      `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}"><circle cx="${size/2}" cy="${size/2}" r="${(size-border)/2-.25}" fill="${color}" stroke="white" stroke-width="${border}"/></svg>`),new kakao.maps.Size(size,size));
+    imageCache.set(size,{kakao:image('#176cc1'),hira_unverified:image('#d98120')});
+  }
+  return imageCache.get(size);
+}
+function dotSizeFor(zoom) {
+  return zoom<16?4:zoom<32?6:zoom<64?8:zoom<128?10:zoom<256?12:14;
+}
+
 function stateFor(controller) {
   if (states.has(controller)) return states.get(controller);
   const state = {controller, overlays:new Map(), info:new kakao.maps.InfoWindow({zIndex:30}), signature:'', token:0};
-  const image = color => new kakao.maps.MarkerImage('data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(
-    `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18"><circle cx="9" cy="9" r="7" fill="${color}" stroke="white" stroke-width="2"/></svg>`), new kakao.maps.Size(18,18));
-  state.images = {kakao:image('#176cc1'), hira_unverified:image('#d98120')};
+  state.dotSize=18;state.images=imagesFor(18);
   states.set(controller, state);
   return state;
 }
@@ -120,17 +133,27 @@ function makeOverlay(state,entry) {
     record.button.onclick=event=>{event.stopPropagation();kakao.maps.event.preventMap();openGroup(state,record.entry);};
     record.overlay=new kakao.maps.CustomOverlay({position:position(entry),content:record.button,yAnchor:.5,zIndex:16,clickable:true});
   }
-  updateOverlay(record,entry);
+  updateOverlay(record,entry,state);
   record.overlay.setMap(state.controller.map);
   return record;
 }
-function updateOverlay(record,entry) {
+function updateOverlay(record,entry,state) {
   if(record.entry.lng!==entry.lng || record.entry.lat!==entry.lat)record.overlay.setPosition(position(entry));
   record.entry=entry;
+  if(entry.count===1 && record.dotSize!==state.dotSize) {
+    record.overlay.setImage(state.images[entry.members[0].source]);
+    record.dotSize=state.dotSize;
+  }
   if(record.button){
-    const text=count(entry.count);
+    const text=entry.displayAsDot?'':count(entry.count);
     if(record.button.textContent!==text)record.button.textContent=text;
-    record.button.setAttribute('aria-label','치과 '+text+'곳 · 확대 또는 목록 보기');
+    record.button.classList.toggle('clinic-point-group',Boolean(entry.displayAsDot));
+    if(entry.displayAsDot){
+      for(const property of ['width','height','minWidth'])record.button.style[property]=state.dotSize+'px';
+      record.button.style.borderWidth=dotBorderFor(state.dotSize)+'px';
+    }
+    record.button.setAttribute('aria-label','치과 '+count(entry.count)+'곳 · '+(entry.displayAsDot?'같은 위치의 치과 목록 보기':'확대 또는 목록 보기'));
+    record.button.title=entry.displayAsDot?'같은 위치의 치과 '+count(entry.count)+'곳':'';
     record.button.classList.toggle('hira-only',entry.kakaoCount===0);
   }
 }
@@ -157,15 +180,20 @@ async function renderNow(controller) {
   if(!data){if(failed)return;await loadData();if(!data||!toggle.checked||controller.el.closest('[hidden]'))return;}
   const started=performance.now(),state=stateFor(controller),bounds=controller.viewport();
   const width=controller.el.clientWidth||900,height=controller.el.clientHeight||520;
-  const signature=[filter.value,controller.map.getLevel(),width,height,...bounds].join(':');
+  const zoom=2 ** ((controller.homeLevel ?? controller.map.getLevel())-controller.map.getLevel());
+  const individual=zoom>=16;
+  const dotSize=dotSizeFor(zoom);
+  const signature=[filter.value,controller.map.getLevel(),dotSize,individual,width,height,...bounds].join(':');
   if(signature===state.signature)return;
   state.signature=signature;
-  const {points,entries}=clinicDisplayPlan(index,bounds,filter.value,width,height);
+  state.dotSize=dotSize;state.images=imagesFor(dotSize);
+  if(state.selectedMarker&&state.openPoint)state.selectedMarker.setImage(state.images[state.openPoint.source]);
+  const {points,entries}=clinicDisplayPlan(index,bounds,filter.value,width,height,240,individual);
   const current=new Set(entries.map(e=>e.key));let created=0;
   for(const [key,record] of state.overlays)if(!current.has(key)){record.overlay.setMap(null);state.overlays.delete(key);}
   for(const entry of entries){
     const record=state.overlays.get(entry.key);
-    if(record)updateOverlay(record,entry);
+    if(record)updateOverlay(record,entry,state);
     else{state.overlays.set(entry.key,makeOverlay(state,entry));created++;}
   }
   const p=state.openPoint;
@@ -174,7 +202,7 @@ async function renderNow(controller) {
   status.dataset.renderMs=(performance.now()-started).toFixed(1);
   status.dataset.createdMarkers=String(created);
   status.dataset.overlayCount=String(entries.length);
-  tell('화면 안 '+count(points.length)+'곳 · 카카오 '+count(blue)+' / 심평원 '+count(points.length-blue)+' · 숫자를 누르면 확대');
+  tell('화면 안 '+count(points.length)+'곳 · 카카오 '+count(blue)+' / 심평원 '+count(points.length-blue)+(individual?' · 점을 누르면 치과 정보':' · 숫자를 누르면 확대'));
 }
 function render(controller) {
   if(!toggle.checked||controller.el.closest('[hidden]')){clear(controller);return;}

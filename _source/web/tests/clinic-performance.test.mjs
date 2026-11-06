@@ -44,3 +44,19 @@ test('coincident clinics remain individually available through a full membership
     assert.equal(plan.entries.length,1);assert.equal(plan.entries[0].members.length,n);
   }
 });
+
+test('individual point mode removes density grouping while preserving coordinates, sources and coincident membership',()=>{
+  const bounds=[126.95,37.45,127.1,37.6];
+  for(const source of ['all','kakao','hira_unverified']){
+    const {points,entries}=clinicDisplayPlan(index,bounds,source,900,520,240,true);
+    assert.deepEqual(ids(entries.flatMap(g=>g.members)),ids(points));
+    if(source==='all')assert.ok(entries.length>240,'dense views must not retain the cluster cap');
+    for(const entry of entries){
+      assert.ok(entry.count===1||entry.displayAsDot);
+      for(const p of entry.members)assert.deepEqual([entry.lng,entry.lat],[p.lng,p.lat]);
+    }
+  }
+  const coincident=[{id:'a',lng:127,lat:37,source:'kakao'},{id:'b',lng:127,lat:37,source:'hira_unverified'}];
+  const group=clinicDisplayPlan(createClinicIndex(coincident),[126,36,128,38],'all',900,520,240,true).entries[0];
+  assert.equal(group.displayAsDot,true);assert.equal(group.count,2);assert.equal(group.kakaoCount,1);
+});

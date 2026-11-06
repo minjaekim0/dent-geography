@@ -69,7 +69,7 @@ test('generated integration hook precedes dental calculations, and embedded mode
   assert.match(html, /src="kakao-core\.js\?v=[a-f0-9]{12}"/);
   assert.match(html, /src="kakao-population-panel\.js\?v=[a-f0-9]{12}"/);
   assert.ok(html.indexOf('src="kakao-population-panel.js?v=')<html.indexOf('src="kakao-core.js?v='));
-  assert.match(core,/function redraw\(live=false\)\{if\(globalThis.populationPanel\?\.render\(S.metric\)\)return;eventLabels\(\);/);
+  assert.match(core,/function redraw\(live=false\)\{globalThis.refreshWorkspace\?\.\(S.metric\);if\(globalThis.populationPanel\?\.render\(S.metric\)\)return;eventLabels\(\);/);
 });
 
 test('official daytime census is an independent dental-status metric with lazy loading',()=>{

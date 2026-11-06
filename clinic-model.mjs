@@ -44,10 +44,10 @@ export function createClinicIndex(locations, cellSize = .05) {
   }};
 }
 
-export function clinicDisplayPlan(index, bounds, source = 'all', width = 900, height = 520, maxOverlays = 240) {
+export function clinicDisplayPlan(index, bounds, source = 'all', width = 900, height = 520, maxOverlays = 240, individual = false) {
   const points = index.query(bounds, source);
   const single = p => ({key:'p:'+p.id, lng:p.lng, lat:p.lat, count:1, members:[p], kakaoCount:p.source==='kakao'?1:0});
-  if (points.length <= maxOverlays) {
+  if (individual || points.length <= maxOverlays) {
     const exact = new Map();
     for (const p of points) {
       const key = p.lng + ':' + p.lat;
@@ -55,7 +55,8 @@ export function clinicDisplayPlan(index, bounds, source = 'all', width = 900, he
       exact.get(key).push(p);
     }
     return {points, entries:[...exact.values()].map(members => members.length === 1 ? single(members[0]) : {
-      key:'c:'+members[0].lng+':'+members[0].lat, lng:members[0].lng, lat:members[0].lat,
+      key:(individual?'d:':'c:')+members[0].lng+':'+members[0].lat, lng:members[0].lng, lat:members[0].lat,
+      displayAsDot:individual,
       count:members.length, kakaoCount:members.filter(p=>p.source==='kakao').length,
       bounds:[members[0].lng,members[0].lat,members[0].lng,members[0].lat], members
     })};
