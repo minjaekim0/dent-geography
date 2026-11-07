@@ -16,7 +16,7 @@ function imagesFor(size) {
     const border=dotBorderFor(size);
     const image=color=>new kakao.maps.MarkerImage('data:image/svg+xml;charset=UTF-8,'+encodeURIComponent(
       `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}"><circle cx="${size/2}" cy="${size/2}" r="${(size-border)/2-.25}" fill="${color}" stroke="white" stroke-width="${border}"/></svg>`),new kakao.maps.Size(size,size));
-    imageCache.set(size,{kakao:image('#176cc1'),hira_unverified:image('#d98120')});
+    imageCache.set(size,{kakao:image('#34485f'),hira_unverified:image('#d98120')});
   }
   return imageCache.get(size);
 }
