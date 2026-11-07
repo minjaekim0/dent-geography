@@ -33,7 +33,16 @@ function stateFor(controller) {
 }
 function closeInfo(state) {
   state.token++; state.openPoint = null; state.info.close();
+  state.dockedCard?.remove();state.dockedCard=null;
   state.selectedMarker?.setMap(null); state.selectedMarker = null;
+}
+function showInfoCard(state,card){
+  const dock=document.querySelector('#catchment-clinic-details');
+  if(dock){
+    state.info.close();dock.replaceChildren(card);state.dockedCard=card;
+    return true;
+  }
+  state.info.setContent(card);return false;
 }
 function cardFor(state, title) {
   const card=document.createElement('div'); card.className='clinic-card';
@@ -64,6 +73,7 @@ async function detail(point) {
 async function openClinic(state, point, marker) {
   closeInfo(state);
   state.openPoint=point;
+  window.dispatchEvent(new CustomEvent('clinic-catchment',{detail:{point,controller:state.controller}}));
   const token=state.token, map=state.controller.map;
   if(!marker) {
     marker=new kakao.maps.Marker({map,position:position(point),image:state.images[point.source],zIndex:25});
@@ -71,7 +81,7 @@ async function openClinic(state, point, marker) {
   }
   const card=cardFor(state,point.name);
   addText(card,'상세 주소를 불러오는 중입니다…');
-  state.info.setContent(card); state.info.open(map,marker);
+  if(!showInfoCard(state,card))state.info.open(map,marker);
   try {
     const p=await detail(point);
     if(token!==state.token)return;
@@ -85,19 +95,20 @@ async function openClinic(state, point, marker) {
     if(p.largeDifference)addText(loaded,'심평원 원본 좌표와 100m 초과 차이 · 카카오 위치 우선');
     const href=placeLink(p.placeUrl);
     if(href){const link=document.createElement('a');link.href=href;link.target='_blank';link.rel='noopener noreferrer';link.textContent='카카오맵에서 보기 ↗';loaded.append(link);}
-    state.info.setContent(loaded);
+    showInfoCard(state,loaded);
   } catch(error) {
     if(token!==state.token)return;
     const failedCard=cardFor(state,point.name);addText(failedCard,error.message);
     const retry=document.createElement('button');retry.type='button';retry.textContent='다시 시도';retry.onclick=()=>openClinic(state,point);
-    failedCard.append(retry);state.info.setContent(failedCard);
+    failedCard.append(retry);showInfoCard(state,failedCard);
   }
 }
 function groupList(state, entry, page=0) {
+  window.dispatchEvent(new CustomEvent('clinic-list',{detail:{controller:state.controller}}));
   closeInfo(state);
-  // Keep the popup open while the SDK pans to make room for it.
   state.openPoint={...entry.members[0],lng:entry.lng,lat:entry.lat};
   const card=cardFor(state,'이 위치 주변 치과 '+count(entry.count)+'곳');
+  card.className+=' clinic-group-card';
   const list=document.createElement('div');list.className='clinic-group-list';
   for(const p of entry.members.slice(page*50,(page+1)*50)) {
     const button=document.createElement('button');button.type='button';button.textContent=p.name;
@@ -112,7 +123,7 @@ function groupList(state, entry, page=0) {
     }
     card.append(nav);
   }
-  state.info.setContent(card);state.info.setPosition(position(entry));state.info.open(state.controller.map);
+  if(!showInfoCard(state,card)){state.info.setPosition(position(entry));state.info.open(state.controller.map);}
 }
 function openGroup(state, entry) {
   const b=entry.bounds;
@@ -197,7 +208,7 @@ async function renderNow(controller) {
     else{state.overlays.set(entry.key,makeOverlay(state,entry));created++;}
   }
   const p=state.openPoint;
-  if(p && (!points.some(v=>v.id===p.id) || p.lng<bounds[0]||p.lng>bounds[2]||p.lat<bounds[1]||p.lat>bounds[3]))closeInfo(state);
+  if(p && !state.dockedCard && (!points.some(v=>v.id===p.id) || p.lng<bounds[0]||p.lng>bounds[2]||p.lat<bounds[1]||p.lat>bounds[3]))closeInfo(state);
   const blue=points.reduce((n,p)=>n+(p.source==='kakao'),0);
   status.dataset.renderMs=(performance.now()-started).toFixed(1);
   status.dataset.createdMarkers=String(created);
@@ -209,7 +220,7 @@ function render(controller) {
   const state=stateFor(controller);clearTimeout(state.timer);
   state.timer=setTimeout(()=>{state.timer=null;renderNow(controller);},50);
 }
-globalThis.clinicLayer={render,clear};
+globalThis.clinicLayer={render,clear,closeInfo:()=>{for(const state of states.values())closeInfo(state);}};
 function refresh(){
   for(const controller of globalThis.clinicMapControllers?.values()||[]){
     if(!toggle.checked)clear(controller);

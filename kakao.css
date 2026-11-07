@@ -119,3 +119,66 @@ main[data-home-map] .kakao-basemap-shade{position:absolute;pointer-events:none;z
 .workers-heat-legend .population-heat-ramp{background:linear-gradient(90deg,#eff9ff,#91d2ff,#5aaff7,#2891f0)}
 .map-layers label:has(#population-heat-toggle){accent-color:#eb3769}.map-layers .workers-heat-choice{accent-color:#2891f0}
 @media(max-width:650px){.workers-heat-legend{--workers-legend-left:185px}}
+
+#catchment-panel{width:100%;border-top:1px solid #d8e3ea;padding:14px 0;font-size:13px;line-height:1.6}#catchment-panel h3{margin:0;font-size:16px}#catchment-panel p{margin:8px 0}#catchment-panel button{border:1px solid #34485f;border-radius:6px;background:#34485f;color:white;padding:8px 12px;font:inherit;cursor:pointer}#catchment-panel button[aria-pressed=true]{background:#fff;color:#34485f}#catchment-panel label{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:12px}#catchment-panel select{font:inherit;padding:6px;border:1px solid #d8e3ea;border-radius:5px}#catchment-panel table{width:100%;border-collapse:collapse;table-layout:fixed;font-size:12px}#catchment-panel caption{text-align:left;font-weight:700}#catchment-panel th,#catchment-panel td{padding:7px 3px;text-align:right;border-bottom:1px solid #d8e3ea;white-space:pre-line;overflow-wrap:anywhere}#catchment-panel th:first-child,#catchment-panel td:first-child{text-align:left;width:32%}#catchment-panel small{display:block;color:#647785;font-size:11px;line-height:1.6}.catchment-total{font-weight:700;color:#34485f}
+
+#catchment-panel summary{font-size:15px;font-weight:700;cursor:pointer}
+#catchment-panel{grid-column:1/-1;min-width:0}@media(max-width:700px){main[data-home-map] #catchment-panel{grid-row:4}main[data-home-map] #catchment-panel[open]{max-height:45vh;overflow:auto;padding:10px 0}#catchment-panel summary{position:sticky;top:-1px;background:white;z-index:1}}
+
+.catchment-chart{margin:12px 0;width:100%;min-width:0}.catchment-chart svg{display:block;width:100%;height:auto;overflow:visible}.catchment-chart-legend{display:flex;gap:16px;justify-content:center;font-size:12px;font-weight:700}.catchment-chart-readout{font-size:11px;line-height:1.6;min-height:36px;margin:8px 0;color:#34485f}.catchment-chart svg:focus-visible{outline:2px solid #34485f;outline-offset:2px}
+
+.catchment-expected{padding:12px;background:#f5f8fa;border:1px solid #e2e8ee;border-radius:8px;margin:12px 0}.catchment-expected strong{font-size:12px}.catchment-expected>div{font-size:17px;font-weight:700;margin-top:4px}.catchment-expected .population{color:#eb3769}.catchment-expected .workers{color:#2891f0}
+
+#catchment-panel .catchment-impact{padding:12px 0;border-top:1px solid #d8e3ea;margin:12px 0}#catchment-panel .catchment-impact summary{font-size:13px;position:static}.catchment-impact table td{font-size:11px}#catchment-panel .catchment-impact-nav{display:flex;align-items:center;gap:8px;justify-content:center;margin-top:10px}#catchment-panel button:disabled{opacity:.4;cursor:default}
+
+#catchment-panel .catchment-impact summary{font-size:16px;color:#243448}.catchment-impact-total{padding:10px 12px;border-radius:7px;background:#edf2f6;font-weight:700}.catchment-impact-cards{list-style:none;margin:14px 0;padding:0;display:grid;gap:12px}.catchment-impact-cards>li{border:1px solid #d7e1e8;border-radius:10px;padding:12px;background:#fff;box-shadow:0 2px 6px #23374b0a}.catchment-impact-heading{display:flex;align-items:center;gap:8px;margin-bottom:10px}.catchment-impact-heading>strong{font-size:15px;line-height:1.4;flex:1}.catchment-impact-rank{display:grid;place-items:center;background:#34485f;color:white;border-radius:7px;min-width:26px;height:26px;font-size:15px}.catchment-impact-values{display:grid;grid-template-columns:1fr 1fr;gap:8px}.catchment-impact-values>div{padding:9px;border-radius:7px;background:#f6f8fb}.catchment-impact-values strong{display:block;font-size:16px;line-height:1.6}.catchment-impact-values .population strong{color:#b92450}.catchment-impact-values .workers strong{color:#1768b2}.catchment-impact-loss{display:block;font-size:12px;font-weight:700;color:#aa4526}.catchment-impact-heading>small{white-space:nowrap}
+.grid-flow-panel{padding:14px 0;border-top:1px solid #d8e3ea;margin-top:14px}#catchment-panel .grid-flow-panel h3{font-size:15px}.grid-flow-tools{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:10px 0}#catchment-panel .grid-flow-tools label{margin:0;justify-content:flex-start;font-size:12px}#catchment-panel .grid-flow-tools button{font-size:12px;padding:6px 9px}.grid-flow-destinations{list-style:none;padding:0;margin:8px 0;max-height:300px;overflow:auto}.grid-flow-destinations>li{padding:9px 0;border-bottom:1px solid #e2e8ee}.grid-flow-destinations>li>div:first-child{display:flex;align-items:start;gap:8px;justify-content:space-between}.grid-flow-destinations strong{font-size:13px}.grid-flow-destinations b{white-space:nowrap;font-size:15px}.grid-flow-counts{display:flex;gap:14px;font-size:12px;font-weight:700}.grid-flow-counts .population{color:#b92450}.grid-flow-counts .workers{color:#1768b2}.grid-flow-remainder{font-weight:700;font-size:12px}.grid-flow-map-key{position:absolute;z-index:20;pointer-events:none;top:64px;left:12px;right:12px;max-width:370px;padding:7px 10px;background:#fffffff2;border:1px solid #d8e3ea;border-radius:7px;color:#243448;font-size:11px;line-height:1.5}
+@media(max-width:700px){.catchment-impact-values strong{font-size:15px}.catchment-impact-heading>strong{font-size:14px}.grid-flow-map-key{font-size:10px}}
+.catchment-impact-cards>li,.grid-flow-destinations>li{display:block}
+.catchment-modes{display:flex;gap:6px;margin:10px 0}#catchment-panel .catchment-modes button{flex:1;background:#fff;color:#34485f;padding:9px 7px;font-size:13px;font-weight:700}#catchment-panel .catchment-modes button[aria-pressed=true]{background:#34485f;color:#fff}
+
+/* Keep analysis navigation visible; its results scroll independently. */
+main[data-home-map]>.kakao-tools{overflow:hidden;gap:10px}
+main[data-home-map] #catchment-panel{order:3;display:flex;flex-direction:column;flex:1 1 0;min-height:0;overflow:hidden;padding:10px 0 0;border-top:1px solid #d8e3ea}
+#catchment-panel .catchment-modes{flex:none;margin:0 0 10px;gap:5px}#catchment-panel .catchment-modes button{font-size:12px;padding:10px 5px}
+#catchment-body{flex:1;min-height:0;overflow:auto;overscroll-behavior:contain;padding:0 2px 12px;scrollbar-width:thin}
+#catchment-panel summary{position:static;font-size:12px}#catchment-panel #catchment-selected-name{font-size:24px;font-weight:800;line-height:1.35;letter-spacing:-.5px;margin:8px 0 14px;word-break:keep-all;overflow-wrap:anywhere;color:#243448}
+#catchment-status{font-size:12px;color:#647785}#catchment-status[hidden],#catchment-selected-name[hidden]{display:none}
+#catchment-method{margin:18px 0 0;padding:12px 0 0;border-top:1px solid #e2e8ee;color:#647785;font-size:11px}#catchment-method summary{font-size:11px;font-weight:500}#catchment-method p{font-size:11px;line-height:1.7}#catchment-method table{font-size:10px}
+#catchment-panel .catchment-total{font-weight:500;font-size:12px;color:#647785}.catchment-expected{margin:10px 0 14px}.catchment-chart-readout{min-height:0;margin:7px 0}.catchment-chart-readout[hidden]{display:none}
+#catchment-panel .grid-flow-panel h3{font-size:21px;font-weight:800}.grid-flow-panel{margin-top:4px;padding-top:0;border-top:0}.clinic-card>strong{font-size:19px;line-height:1.4}
+/* Layer and map settings sit on the map itself, outside SDK-managed content. */
+.home-map-controls{position:absolute;top:62px;right:14px;z-index:25;width:205px;max-height:calc(100% - 90px);overflow:auto;overscroll-behavior:contain;padding:12px;background:rgba(255,255,255,.97);border:1px solid #d8e3ea;border-radius:10px;box-shadow:0 3px 12px #24344814;scrollbar-width:thin}
+.home-map-controls h2{font-size:12px;line-height:1.4;margin:0 0 10px;color:#647785}
+main[data-home-map] .home-map-controls .map-layers{display:flex;flex-direction:column;align-items:stretch;gap:10px;margin:0;padding:0;border:0;width:100%;font-size:12px}
+main[data-home-map] .home-map-controls .map-layers>label{display:flex;align-items:center;gap:7px;min-height:22px;white-space:normal}
+.home-map-controls .map-layers input{width:15px;height:15px;margin:0;accent-color:#34485f;flex-shrink:0}
+main[data-home-map] .home-map-controls .population-heat-age{justify-content:space-between;font-size:12px}main[data-home-map] .home-map-controls .population-heat-age select{width:110px;min-width:0;max-width:110px;margin:0;flex:0 1 auto;font-size:11px;padding:5px;border:1px solid #d8e3ea;border-radius:5px}
+main[data-home-map] .home-map-controls .map-settings{width:100%;margin:12px 0 0;padding-top:10px;border-top:1px solid #e2e8ee}
+main[data-home-map] .home-map-controls .map-settings>summary{padding:5px 0;border:0;font-size:12px}
+main[data-home-map] .home-map-controls .settings-content{position:static;width:100%;max-width:none;max-height:none;margin:0;padding:10px 0 0;border:0;box-shadow:none;overflow:visible}
+.home-map-controls .fill-control{display:flex;gap:5px;align-items:center;flex-wrap:wrap;font-size:11px}.home-map-controls input[type=range]{width:80px;min-width:40px}.home-map-controls .settings-heading{font-size:11px;margin-bottom:10px}.home-map-controls .settings-content p,.home-map-controls .settings-content small{font-size:10px}
+.grid-flow-map-key{max-width:calc(100% - 250px);right:auto;width:max-content}
+@media(max-width:700px){
+ main[data-home-map]>.kakao-tools{grid-template-columns:minmax(0,1fr) minmax(130px,.7fr);overflow:visible;gap:5px 8px;padding:5px 12px}
+ main[data-home-map] #catchment-panel{grid-column:1/-1;grid-row:2;flex:none;max-height:none;overflow:visible;padding:5px 0 0}
+ #catchment-panel .catchment-modes{margin-bottom:5px}#catchment-panel .catchment-modes button{padding:8px 5px;font-size:12px}
+ #catchment-body{flex:none;max-height:32dvh;padding-bottom:4px}#catchment-panel #catchment-selected-name{font-size:22px;margin:6px 0 10px}
+ main[data-home-map] #search-results{position:absolute;left:12px;right:12px;top:43px;width:auto;z-index:40;max-height:34dvh;border:1px solid #d8e3ea;border-radius:7px;box-shadow:0 6px 18px #24344822;padding:8px}
+ .home-map-controls{top:56px;right:9px;width:158px;padding:9px;max-height:calc(100% - 85px);border-radius:8px}
+ .home-map-controls h2{font-size:11px;margin-bottom:7px}main[data-home-map] .home-map-controls .map-layers{font-size:11px;gap:7px}
+ main[data-home-map] .home-map-controls .map-layers>label{min-height:20px}main[data-home-map] .home-map-controls .population-heat-age{font-size:11px}
+ main[data-home-map] .home-map-controls .population-heat-age select{max-width:98px;width:98px;font-size:10px}
+ .grid-flow-map-key{max-width:calc(100% - 190px);font-size:10px}
+}
+@media(max-width:480px){
+ main[data-home-map]>.kakao-tools{grid-template-columns:minmax(0,1fr);padding:4px 10px}
+ main[data-home-map] #place-search{grid-column:1;grid-row:1}main[data-home-map] #region-picker{grid-column:1;grid-row:2}
+ main[data-home-map] #catchment-panel{grid-row:3}main[data-home-map] #search-results{top:78px;left:10px;right:10px}
+ .home-map-controls{width:148px;padding:8px}main[data-home-map] .home-map-controls .population-heat-age select{max-width:88px;width:88px}
+}
+
+#catchment-panel .catchment-chart h3{margin:20px 0 10px;font-size:15px}
+.catchment-inflow{padding:12px 0;border-top:1px solid #e2e8ee;border-bottom:1px solid #e2e8ee;margin:12px 0}.catchment-inflow-tools{display:flex;flex-wrap:wrap;gap:8px 12px;margin:8px 0}#catchment-panel .catchment-inflow-tools label{margin:0;justify-content:flex-start;font-size:12px;gap:4px;font-weight:600}#catchment-panel .catchment-inflow-tools button{padding:5px 9px;font-size:12px}.catchment-inflow-summary{font-size:11px;font-weight:700;line-height:1.9}.catchment-inflow-key strong{display:block;margin-bottom:3px}.catchment-inflow-key div{font-weight:700}.catchment-inflow-key[hidden]{display:none}
+
+#catchment-clinic-details:empty{display:none}#catchment-clinic-details .clinic-card{position:relative;box-sizing:border-box;width:100%;max-width:none;padding:0 0 12px;margin:0 0 12px;border-bottom:1px solid #e2e8ee;font-size:12px;line-height:1.6}#catchment-clinic-details .clinic-card:not(.clinic-group-card)>strong{display:none}#catchment-clinic-details .clinic-card>p:first-of-type{padding-right:40px;margin-top:0}#catchment-clinic-details .clinic-card p{font-size:12px;margin:7px 0}#catchment-clinic-details .clinic-card small{font-size:11px}#catchment-clinic-details .clinic-card .clinic-close{top:0;right:0;padding:3px 5px;background:#edf2f6;color:#647785;border:0;font-size:11px;line-height:1.4}#catchment-clinic-details .clinic-group-card>strong{padding-right:40px;font-size:18px}#catchment-clinic-details .clinic-group-list{max-height:220px;overflow:auto;display:grid;gap:5px;margin-top:10px}#catchment-clinic-details .clinic-group-list button{text-align:left;background:#f5f8fa;color:#34485f;border:1px solid #e2e8ee;padding:7px 9px}

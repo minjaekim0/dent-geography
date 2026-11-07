@@ -150,8 +150,9 @@ class KakaoAnalysisMap {
       this.canvas.className = 'kakao-canvas';
       this.canvas.setAttribute('aria-label', this.el.id === 'map' ? '카카오 시군구 분석 지도' : '카카오 읍면동 분석 지도');
       this.el.append(this.canvas);
+      const home=Boolean(this.el.closest('main[data-home-map]'));
       this.map = new kakao.maps.Map(this.canvas, {
-        center: new kakao.maps.LatLng(36.0,127.8), level: 13
+        center: home?new kakao.maps.LatLng(37.5665,126.978):new kakao.maps.LatLng(36.0,127.8), level: home?9:13
       });
       this.map.addControl(new kakao.maps.MapTypeControl(), kakao.maps.ControlPosition.TOPRIGHT);
       if(this.el.closest('main[data-home-map]')){
@@ -240,7 +241,13 @@ class KakaoAnalysisMap {
     const bounds = new kakao.maps.LatLngBounds(new kakao.maps.LatLng(33.05,124.5),new kakao.maps.LatLng(38.65,131.95));
     this.map.setBounds(bounds,35,35,65,35);
     if(home){const level=Math.max(1,this.map.getLevel()-1);this.map.setMaxLevel(level);this.map.setLevel(level);}
-    this.homeLevel = this.map.getLevel(); this.updateZoom(); this.schedule();
+    this.homeLevel = this.map.getLevel();
+    // Start with Seoul while retaining the existing nationwide zoom-out range.
+    if(home){
+      const seoul=new kakao.maps.LatLngBounds(new kakao.maps.LatLng(37.413,126.764),new kakao.maps.LatLng(37.702,127.183));
+      this.map.setBounds(seoul,35,35,65,35);
+    }
+    this.updateZoom(); this.schedule();
   }
   suspend() {
     globalThis.clinicLayer?.clear(this);

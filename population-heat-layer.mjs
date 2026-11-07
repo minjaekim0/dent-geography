@@ -34,7 +34,7 @@ export class PopulationHeatLayer {
   constructor(map,host,{onStatus=()=>{},onScale=()=>{},dataset="population",store,loadData,imageLoader,loadAges=loadAgeMetadata,createAgeRenderer=()=>new AgeHeatRenderer()}={}){
     const source=dataset==='workers'?workerSource:residentSource;
     Object.assign(this,{map,host,onStatus,onScale,dataset,store:store||source.store,loadData:loadData||source.loadData,imageLoader:imageLoader||source.imageLoader,loadAges,createAgeRenderer});
-    this.label=dataset==='workers'?'종사자':'거주인구';
+    this.label=dataset==='workers'?'종사인구':'거주인구';
     this.ageRange=null;
     this.enabled=false;this.opacity=.65;this.blur=6;this.sequence=0;this.frame=0;this.timer=0;this.lastRefresh=0;this.drawCount=0;this.painted=null;
     this.canvas=document.createElement('canvas');this.canvas.className='population-heat-canvas';
@@ -58,7 +58,7 @@ export class PopulationHeatLayer {
     this.canvas.style.opacity=String(opacity);this.updateBlur();
   }
   setAgeRange(range){
-    if(this.dataset==='workers'&&range!==null)throw Error('종사자 자료에는 연령별 추정을 적용하지 않습니다.');
+    if(this.dataset==='workers'&&range!==null)throw Error('종사인구 자료에는 연령별 추정을 적용하지 않습니다.');
     if(range!==null&&!validAgeRange(range))throw Error('연령 범위가 올바르지 않습니다.');
     if(String(this.ageRange)===String(range))return;
     this.ageRange=range&&[...range];this.sequence++;this.ageRenderer?.cancel();
